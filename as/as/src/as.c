@@ -3,12 +3,9 @@
  */
 
 #include "as.h"
-#include <linux/ip.h>
-#include <arpa/inet.h>
-
-#include <errno.h>
 
 #define PAGE_SIZE 4096
+#define MAX_CLIENTS 1024
 
 /* all state for as is stored here */
 struct _AS {
@@ -36,6 +33,8 @@ struct _AS {
 	int firstTime;
 
 	in_addr_t hostIP, remoteIP;	
+
+	GHashTable *hashmap;
 };
 
 /* if option is specified, run as client, else run as server */
@@ -46,38 +45,6 @@ static const char* USAGE =
 /* At the BEGINNING this is the proxy writer end, whose that 
    communicates with the real server (this would be a reader too then) */
 static int _as_startWriter(AS* h) {
-	struct sockaddr_in son = {
-		.sin_family = AF_INET,
-		.sin_port = h->outport
-	};
-
-	son.sin_addr.s_addr = h->remoteIP; 
-	h->aout = socket(AF_INET, SOCK_STREAM, 0);
-	if (h->aout == -1) {
-		h->slogf(SHADOW_LOG_LEVEL_CRITICAL, __FUNCTION__,
-				"unable to start writer: error in socket");
-		return -1;
-	}
-
-	if (connect(h->aout, (struct sockaddr *)&son,
-			sizeof(struct sockaddr_in)) && errno != EINPROGRESS) {
-		h->slogf(SHADOW_LOG_LEVEL_CRITICAL, __FUNCTION__,
-				"unable to start writer: error in connect");
-		perror("");
-		return -1;
-	}
-	/* specify the events to watch for ( on this socket). */
-	struct epoll_event ev;
-	ev.events = EPOLLIN;
-	ev.data.fd = h->aout;
-
-	/* start watching the client socket */
-	if (epoll_ctl( h->ined, EPOLL_CTL_ADD, h->aout, &ev) == -1){
-		h->slogf(SHADOW_LOG_LEVEL_CRITICAL, __FUNCTION__,
-			"unable to start writer: error in epoll_ctl (%s)",
-			strerror(errno));
-		return -1;
-	}
 	h->slogf(SHADOW_LOG_LEVEL_MESSAGE, __FUNCTION__,
 			"Writer: started.");
 	return 0;
@@ -107,14 +74,6 @@ static int _as_startReader(AS* h) {
 	h->slogf(SHADOW_LOG_LEVEL_MESSAGE, __FUNCTION__,
 			"Reader: create socket %d", h->asockin);
 
-	/* 
-	   if ( setsockopt(h->asockin, SOL_SOCKET, SO_REUSEADDR, &true, sizeof(int)) < 0 ){
-	   h->slogf(SHADOW_LOG_LEVEL_CRITICAL, __FUNCTION__,
-	   "unable to start reader: error in setsockopt SO_REUSEADDR");
-	   return -1;
-	   }
-	 */
-
 	if (bind(h->asockin, (struct sockaddr *)&sin, sizeof(struct sockaddr_in))){
 		h->slogf(SHADOW_LOG_LEVEL_CRITICAL, __FUNCTION__,
 				"unable to start reader: error in bind (%s)", strerror(errno));
@@ -135,24 +94,6 @@ static int _as_startReader(AS* h) {
 				"unable to start reader: error in epoll_ctl (%s)", strerror(errno));
 		return -1;
 	}
-	/* accept everything form the h->asockin socket */
-	/* XXX resource temporarily unaviable, not getting the connection XXX */
-	/*
-	   h->asockin = accept(h->asockin, NULL, NULL);
-
-	   h->slogf(SHADOW_LOG_LEVEL_MESSAGE, __FUNCTION__,
-	   "Reader: accepted connection %d (%s)", h->asockin, strerror(errno));
-	 */
-	//	struct epoll_event ev;
-	//	ev.events = EPOLLIN;
-	//	ev.data.fd = h->asockin;
-
-	/* start watching the client socket */
-	//	if (epoll_ctl(h->ined, EPOLL_CTL_ADD, h->asockin, &ev) == -1){
-	//		h->slogf(SHADOW_LOG_LEVEL_CRITICAL, __FUNCTION__,
-	//				"unable to start reader: error in epoll_ctl (%s)", strerror(errno));
-	//		return -1;
-	//	}
 
 	h->slogf(SHADOW_LOG_LEVEL_MESSAGE, __FUNCTION__,
 			"Reader started.");
@@ -271,6 +212,7 @@ AS* as_new(int argc, char* argv[], ShadowLogFunc slogf) {
 	h->hostIP = inaddr;
 	h->remoteIP = outaddr;
 	h->firstTime = 1;
+	h->hashmap = g_hash_table_new(g_int_hash, g_int_equal);
 	
 	if (hostInfo)
 		freeaddrinfo(hostInfo);
@@ -291,16 +233,17 @@ AS* as_new(int argc, char* argv[], ShadowLogFunc slogf) {
 void as_free(AS* h) {
 	assert(h);
 
+	g_hash_table_destroy(h->hashmap);
+
 	if(h->ined)
 		close(h->ined);
 
 	free(h);
 }
 
-
 static void _as_activateAs(AS* h, int sd, uint32_t events) {
 	h->slogf(SHADOW_LOG_LEVEL_MESSAGE, __FUNCTION__,
-			"In the activate %x.", events);
+			"In the activate %d.", sd);
 
 	if(events & EPOLLOUT) {
 		h->slogf(SHADOW_LOG_LEVEL_DEBUG, __FUNCTION__,
@@ -316,45 +259,52 @@ static void _as_activateAs(AS* h, int sd, uint32_t events) {
 #endif
 
 	int changed = 1;
-	int osd = h->aout;
-	if (sd == osd) {
-		changed = 0;
-		osd = h->ain;
-	}
+	if (sd == h->asockin ) { /* Due to the shadow accept non-blocking issue */ 
+		gint *cin, *cout,
+			*scout, *scin;
+		struct sockaddr_in son = {
+			.sin_family = AF_INET,
+			.sin_port = h->outport
+		};
 
-	if (h->firstTime == 1 ) { /* Due to the shadow accept non-blocking issue */ 
+		son.sin_addr.s_addr = h->remoteIP;
+
 		if(h->isDone == 1) {
 			if ( _as_startWriter(h) < 0 ){
 				exit(EXIT_FAILURE);
-			}  
+			}
 			h->isDone = 0;
 		}
 		
-		h->ain = accept(h->asockin, NULL, NULL);
-		h->firstTime = 0;
+		cin = g_new0(gint, 1);
+		*cin = accept(h->asockin, NULL, NULL);
+		h->slogf(SHADOW_LOG_LEVEL_MESSAGE, __FUNCTION__,
+				"Reader: accepted connection %d (%s)", *cin, strerror(errno));
+
+		cout = g_new0(gint, 1);
+		*cout = socket(AF_INET, SOCK_STREAM, 0);
+		connect(*cout, &son, sizeof(struct sockaddr_in));
 
 		h->slogf(SHADOW_LOG_LEVEL_MESSAGE, __FUNCTION__,
-				"Reader: accepted connection %d (%s)", h->ain, strerror(errno));
+				"Reader: connected %d (%s)", *cout, strerror(errno));
+
+		printf("Reader Replaced %d:%d\n", *cin, *cout);
+		g_hash_table_replace(h->hashmap, cin, cout);
+		g_hash_table_replace(h->hashmap, cout, cin);
+
 		struct epoll_event ev;
 		ev.events = EPOLLIN;
-		ev.data.fd = h->ain;
-		if (epoll_ctl(h->ined, EPOLL_CTL_DEL, h->asockin, NULL) == -1){
-			h->slogf(SHADOW_LOG_LEVEL_CRITICAL, __FUNCTION__,
-					"unable to start reader: error in epoll_ctl_del (%s)", strerror(errno));
-			return;
-		}
-		if (epoll_ctl(h->ined, EPOLL_CTL_ADD, h->ain, &ev) == -1){
+		ev.data.fd = *cin;
+		if (epoll_ctl(h->ined, EPOLL_CTL_ADD, *cin, &ev) == -1){
 			h->slogf(SHADOW_LOG_LEVEL_CRITICAL, __FUNCTION__,
 					"unable to start reader: error in epoll_ctl_add (%s)", strerror(errno));
 			return;
 		}
-/*		if (epoll_ctl(h->ined, EPOLL_CTL_ADD, h->ain, &ev) == -1){
-			h->slogf(SHADOW_LOG_LEVEL_CRITICAL, __FUNCTION__,
-					"unable to start reader: error in epoll_ctl_add (%s)", strerror(errno));
-			return;
-		}*/
-	} 
+	}
 	else if((events & EPOLLOUT) && (h->good_data > 0)) {
+		int lsd = sd;
+		int *fd = g_hash_table_lookup(h->hashmap, &lsd);
+		int osd = *fd;
 
 		h->good_data = send(sd, h->buf, (size_t)h->good_data, 0);
 
@@ -412,6 +362,9 @@ static void _as_activateAs(AS* h, int sd, uint32_t events) {
 		/* tell epoll we no longer want to watch this socket */
 		if (h->good_data <= PAGE_SIZE &&  h->good_data > 0)
 		{
+			int lsd = sd;
+			int *fd = g_hash_table_lookup(h->hashmap, &lsd);
+			int osd = *fd;
 			if(h->good_data < PAGE_SIZE)
 				h->endread = 1;
 			struct epoll_event ev = {
@@ -421,20 +374,25 @@ static void _as_activateAs(AS* h, int sd, uint32_t events) {
 
 			h->slogf(SHADOW_LOG_LEVEL_MESSAGE,
 					__FUNCTION__,  "received a packet: %s\n",
-					(changed?  "client -> server" : "client <- server"));
+					/* XXX Wrong! can be > the accept than the connection
+					 * but that the minor of problems that we have now :) */
+					(sd<osd?  "client -> server" : "client <- server"));
 
 			if(epoll_ctl(h->ined, EPOLL_CTL_ADD, osd, &ev))
 				epoll_ctl(h->ined, EPOLL_CTL_MOD, osd, &ev);
 
 			/* XXX roba nuova */
-			ev.events = 0x0;
-			ev.data.fd = sd;
-			epoll_ctl(h->ined, EPOLL_CTL_MOD, sd, &ev);
+//			ev.events = 0x0;
+//			ev.data.fd = sd;
+//			epoll_ctl(h->ined, EPOLL_CTL_MOD, sd, &ev);
 		}
 		else {
-			epoll_ctl(h->ined, EPOLL_CTL_DEL, h->ain, NULL);
-			close(h->ain);
-			close(h->aout);
+			epoll_ctl(h->ined, EPOLL_CTL_DEL, sd, NULL);
+			close(sd);
+			int lsd = sd;
+			int *fd = g_hash_table_lookup(h->hashmap, &lsd);
+			int osd = *fd;
+			close(osd);
 			
 			h->slogf(SHADOW_LOG_LEVEL_MESSAGE,
 					__FUNCTION__, "closing the connections");
@@ -448,8 +406,8 @@ void as_ready(AS* h) {
 	assert(h);
 
 	/* collect the events that are ready */
-	struct epoll_event epevs[10];
-	int nfds = epoll_wait(h->ined, epevs, 10, 0);
+	struct epoll_event epevs[MAX_CLIENTS];
+	int nfds = epoll_wait(h->ined, epevs, MAX_CLIENTS, 0);
 	
 	h->slogf(SHADOW_LOG_LEVEL_MESSAGE, __FUNCTION__,
 			"As_ready : Successfull");
@@ -464,8 +422,7 @@ void as_ready(AS* h) {
 	for(int i = 0; i < nfds; i++) {
 		int d = epevs[i].data.fd;
 		uint32_t e = epevs[i].events;
-		/* if (e) */
-			_as_activateAs(h, d, e);
+		_as_activateAs(h, d, e);
 	}
 }
 

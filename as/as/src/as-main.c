@@ -4,6 +4,7 @@
 
 #include "as.h"
 #include <signal.h>
+#include <stdarg.h>
 
 /* our as code only relies on the log part of shadowlib,
  * so we need to supply that implementation here since this is
