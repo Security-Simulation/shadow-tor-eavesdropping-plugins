@@ -144,7 +144,7 @@ AS* as_new(int argc, char* argv[], ShadowLogFunc slogf) {
 			"myhostname %s", myhostname);
 
 	/* use epoll to asynchronously watch events for all of our sockets */
-	int inputEd = epoll_create(1);
+	int inputEd = epoll_create(MAX_CLIENTS);
 	if(inputEd == -1) {
 		slogf(SHADOW_LOG_LEVEL_CRITICAL, __FUNCTION__,
 				"Error in main epoll_create");
@@ -412,6 +412,7 @@ void as_ready(AS* h) {
 				"error in epoll_wait");
 		return;
 	}
+
 
 	/* activate correct component for every socket thats ready */
 	for(int i = 0; i < nfds; i++) {
