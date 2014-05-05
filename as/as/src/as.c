@@ -380,11 +380,6 @@ static void _as_activateAs(AS* h, int sd, uint32_t events) {
 
 			if(epoll_ctl(h->ined, EPOLL_CTL_ADD, osd, &ev))
 				epoll_ctl(h->ined, EPOLL_CTL_MOD, osd, &ev);
-
-			/* XXX roba nuova */
-//			ev.events = 0x0;
-//			ev.data.fd = sd;
-//			epoll_ctl(h->ined, EPOLL_CTL_MOD, sd, &ev);
 		}
 		else {
 			epoll_ctl(h->ined, EPOLL_CTL_DEL, sd, NULL);
