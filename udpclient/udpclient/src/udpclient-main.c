@@ -47,7 +47,7 @@ int main(int argc, char *argv[]) {
 	/* udpclient has one main epoll descriptor that watches all of its sockets,
 	 * so we now register that descriptor so we can watch for its events */
 	struct epoll_event mainevent;
-	mainevent.events = EPOLLIN;
+	mainevent.events = EPOLLOUT;
 	mainevent.data.fd = udpclient_getEpollDescriptor(udpclientState);
 	if(!mainevent.data.fd) {
 		mylog("Error retrieving udpclient epoll descriptor");
@@ -64,7 +64,7 @@ int main(int argc, char *argv[]) {
 	while(1) {
 		/* wait for some events */
 		mylog("waiting for events");
-		nReadyFDs = epoll_wait(mainepolld, events, 100, -1);
+		/*nReadyFDs = epoll_wait(mainepolld, events, 100, -1);*/
 		if(nReadyFDs == -1) {
 			mylog("Error in client epoll_wait");
 			return -1;
@@ -78,8 +78,8 @@ int main(int argc, char *argv[]) {
 
 		/* break out if udpclient is done */
 		if(udpclient_isDone(udpclientState)) {
-			udpclient_resetAccept(udpclientState);
-			/*break;*/
+		/*	udpclient_resetAccept(udpclientState);*/
+			break;
 		}
 	}
 

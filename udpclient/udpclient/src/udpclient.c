@@ -24,7 +24,7 @@ struct _UDPClient {
 	/* the two socket descriptor for the two communication directions */
 	int ain;
 	int asockin;
-	int inport;
+	int outport;
 
 	char buf[PAGE_SIZE];
 
@@ -32,7 +32,7 @@ struct _UDPClient {
 
 	int endread;
 	
-	in_addr_t hostIP;	
+	in_addr_t remoteIP;	
 };
 
 /* if option is specified, run udpclient client, else run udpclient server */
@@ -45,10 +45,10 @@ static int _udpclient_startReader(UDPClient* h) {
 	/* create the socket and get a socket descriptor */
 	struct sockaddr_in sin = {
 		.sin_family = AF_INET,
-		.sin_port = h->inport,
+		.sin_port = h->outport,
 	};
 
-	sin.sin_addr.s_addr = h->hostIP;
+	sin.sin_addr.s_addr = h->remoteIP;
 
 	//TODO: change the fd
 	h->asockin = socket(AF_INET, SOCK_DGRAM, 0);
@@ -59,12 +59,6 @@ static int _udpclient_startReader(UDPClient* h) {
 	}
 	h->slogf(SHADOW_LOG_LEVEL_MESSAGE, __FUNCTION__,
 			"Reader: create socket %d", h->asockin);
-
-	if (bind(h->asockin, (struct sockaddr *)&sin, sizeof(struct sockaddr_in))){
-		h->slogf(SHADOW_LOG_LEVEL_CRITICAL, __FUNCTION__,
-				"unable to start reader: error in bind (%s)", strerror(errno));
-		return -1;
-	}
 
 	struct epoll_event ev;
 	ev.events = EPOLLIN;
@@ -140,13 +134,13 @@ UDPClient* udpclient_new(int argc, char* argv[], ShadowLogFunc slogf) {
 	UDPClient* h = calloc(1, sizeof(UDPClient));
 	assert(h);
 
-	h->inport = htons(atoi(inport));
+	h->outport = htons(atoi(inport));
 	h->ined = inputEd;
 	h->slogf = slogf;
 	h->isDone = 0;
 	h->endread = 0;
 	h->good_data = 0;
-	h->hostIP = inaddr;
+	h->remoteIP = inaddr;
 	
 	if (hostInfo)
 		freeaddrinfo(hostInfo);
@@ -182,32 +176,36 @@ static void _udpclient_activateAs(UDPClient* h, int sd, uint32_t events) {
 	usleep(500000);
 #endif
 	
-	if(events & EPOLLIN) {
-		char buf[4096];
-		h->slogf(SHADOW_LOG_LEVEL_DEBUG, __FUNCTION__,
-				"EPOLLIN is set %d", sd);
-		h->endread = 0;
-		h->good_data = recv(sd, buf, (size_t)PAGE_SIZE, 0);
+	char *buf = "ciao (si siamo italiani :D)";
+	
+	struct sockaddr_in sin = { 
+		.sin_family = AF_INET, 
+		.sin_port = h->outport, 
+		.sin_addr.s_addr = h->remoteIP
+	};
+ 
+	h->good_data = sendto(sd, buf, strlen(buf), 0, (struct sockaddr *) &sin, sizeof(struct sockaddr_in));
+	
+	if(h->good_data > 0) {
 		h->slogf(SHADOW_LOG_LEVEL_MESSAGE, __FUNCTION__,
-			 "received %d %s\n", h->good_data, strerror(errno));
-		/* log result */
-		if(h->good_data > 0) {
-			h->slogf(SHADOW_LOG_LEVEL_MESSAGE, __FUNCTION__,
-					"successfully received a message:");
+				"successfully send a message:");
+	
+	h->isDone = 1;
+
 #ifdef UDPClient_DEBUG
-			int i;
-			for (i = 0; i < h->good_data; i++)
-				printf("%c", h->buf[i]);
-			printf("\n");
+		int i;
+		for (i = 0; i < h->good_data; i++)
+			printf("%c", h->buf[i]);
+		printf("\n");
 #endif
-			/* XXX process the message */
-		}
+		/* XXX process the message */
 	}
 }
 
 void udpclient_ready(UDPClient* h) {
 	assert(h);
-
+	_udpclient_activateAs(h, h->asockin, 0);
+#if 0
 	/* collect the events that are ready */
 	struct epoll_event epevs[10];
 	int nfds = epoll_wait(h->ined, epevs, 10, 0);
@@ -228,6 +226,7 @@ void udpclient_ready(UDPClient* h) {
 		/* if (e) */
 			_udpclient_activateAs(h, d, e);
 	}
+#endif
 }
 
 /* return the file descriptor to read from */
