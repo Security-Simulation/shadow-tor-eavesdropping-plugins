@@ -31,6 +31,5 @@ void udpclient_free(UDPClient* h);
 void udpclient_ready(UDPClient* h);
 int udpclient_getEpollDescriptor(UDPClient* h);
 int udpclient_isDone(UDPClient* h);
-int udpclient_resetAccept(UDPClient *h);
 
 #endif /* UDPClient_H_ */

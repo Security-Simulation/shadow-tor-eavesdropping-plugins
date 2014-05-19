@@ -51,7 +51,7 @@ static int _udpclient_startReader(UDPClient* h) {
 	sin.sin_addr.s_addr = h->remoteIP;
 
 	//TODO: change the fd
-	h->asockin = socket(AF_INET, SOCK_DGRAM, 0);
+	h->asockin = socket(AF_INET, (SOCK_DGRAM | SOCK_NONBLOCK), 0);
 	if (h->asockin == -1){
 		h->slogf(SHADOW_LOG_LEVEL_CRITICAL, __FUNCTION__,
 				"unable to start reader: error in socket");
@@ -61,7 +61,7 @@ static int _udpclient_startReader(UDPClient* h) {
 			"Reader: create socket %d", h->asockin);
 
 	struct epoll_event ev;
-	ev.events = EPOLLIN;
+	ev.events = EPOLLOUT;
 	ev.data.fd = h->asockin;
 	if (epoll_ctl(h->ined, EPOLL_CTL_ADD, h->asockin, &ev) == -1){
 		h->slogf(SHADOW_LOG_LEVEL_CRITICAL, __FUNCTION__,
@@ -188,8 +188,14 @@ static void _udpclient_activateAs(UDPClient* h, int sd, uint32_t events) {
 	
 	if(h->good_data > 0) {
 		h->slogf(SHADOW_LOG_LEVEL_MESSAGE, __FUNCTION__,
-				"successfully send a message:");
+				"successfully send a message:");	
 	
+	if (epoll_ctl(h->ined, EPOLL_CTL_DEL, h->asockin, NULL) == -1){
+		h->slogf(SHADOW_LOG_LEVEL_CRITICAL, __FUNCTION__,
+				"unable to delete asockin: error in epoll_ctl (%s)", strerror(errno));
+		return;
+	}
+	close(sd);
 	h->isDone = 1;
 
 #ifdef UDPClient_DEBUG
@@ -199,15 +205,19 @@ static void _udpclient_activateAs(UDPClient* h, int sd, uint32_t events) {
 		printf("\n");
 #endif
 		/* XXX process the message */
+	}else{
+		h->slogf(SHADOW_LOG_LEVEL_MESSAGE, __FUNCTION__,
+			"failed to send a message:");	
 	}
 }
 
 void udpclient_ready(UDPClient* h) {
 	assert(h);
-	_udpclient_activateAs(h, h->asockin, 0);
-#if 0
+	/*_udpclient_activateAs(h, h->asockin, 0);*/
+#if 1
 	/* collect the events that are ready */
 	struct epoll_event epevs[10];
+
 	int nfds = epoll_wait(h->ined, epevs, 10, 0);
 	
 	h->slogf(SHADOW_LOG_LEVEL_MESSAGE, __FUNCTION__,
@@ -240,23 +250,3 @@ int udpclient_isDone(UDPClient* h) {
 	return h->isDone;
 }
 
-int udpclient_resetAccept(UDPClient* h){
-	h->slogf(SHADOW_LOG_LEVEL_MESSAGE, __FUNCTION__,
-			"resetting the whole thing");
-	
-	struct epoll_event ev;
-	ev.events = EPOLLIN;
-	ev.data.fd = h->asockin;
-/*	if (epoll_ctl(h->ined, EPOLL_CTL_DEL, h->aout, NULL) == -1){
-		h->slogf(SHADOW_LOG_LEVEL_CRITICAL, __FUNCTION__,
-				"unable to reset everything: error in epoll_ctl_del (%s)", strerror(errno));
-		return -1;
-	}*/
-	if (epoll_ctl(h->ined, EPOLL_CTL_ADD, h->asockin, &ev) == -1){
-		h->slogf(SHADOW_LOG_LEVEL_CRITICAL, __FUNCTION__,
-				"unable to reset everything: error in epoll_ctl_add (%s)", strerror(errno));
-		return -1;
-	}
-	
-	return 0;
-}
