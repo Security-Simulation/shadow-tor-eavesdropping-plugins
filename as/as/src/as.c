@@ -304,6 +304,11 @@ static void _as_activateAs(AS* h, int sd, uint32_t events) {
 	else if((events & EPOLLOUT) && (h->good_data > 0)) {
 		int lsd = sd;
 		int *fd = g_hash_table_lookup(h->hashmap, &lsd);
+		if (!fd){
+			printf("exiting the activate, after closing the connection\n");
+			return;
+		}
+
 		int osd = *fd;
 
 		h->good_data = send(sd, h->buf, (size_t)h->good_data, 0);
@@ -344,29 +349,25 @@ static void _as_activateAs(AS* h, int sd, uint32_t events) {
 		h->good_data = recv(sd, h->buf, (size_t)PAGE_SIZE, 0);
 		h->slogf(SHADOW_LOG_LEVEL_MESSAGE, __FUNCTION__,
 			 "received %d %s\n", h->good_data, strerror(errno));
-		/* log result */
-		if(h->good_data > 0) {
-			int i;
-			h->slogf(SHADOW_LOG_LEVEL_MESSAGE, __FUNCTION__,
-					"successfully received a message:");
-#ifdef AS_DEBUG
-			for (i = 0; i < h->good_data; i++)
-				printf("%c", h->buf[i]);
-			printf("\n");
-#endif
-		} else {
-			h->slogf(SHADOW_LOG_LEVEL_WARNING, __FUNCTION__,
-					"unable to receive message");
-		}
-
+		
 		/* tell epoll we no longer want to watch this socket */
-		if (h->good_data <= PAGE_SIZE &&  h->good_data > 0)
+		if (h->good_data > 0)
 		{
 			int lsd = sd;
 			int *fd = g_hash_table_lookup(h->hashmap, &lsd);
+			if (!fd){
+				printf("exiting the activate, after closing the connection\n");
+				return;
+			}
 			int osd = *fd;
+			int i;
+			
+			h->slogf(SHADOW_LOG_LEVEL_MESSAGE, __FUNCTION__,
+					"successfully received a message:");
+
 			if(h->good_data < PAGE_SIZE)
 				h->endread = 1;
+			
 			struct epoll_event ev = {
 				.events = EPOLLOUT|EPOLLIN,
 			};
@@ -380,18 +381,36 @@ static void _as_activateAs(AS* h, int sd, uint32_t events) {
 
 			if(epoll_ctl(h->ined, EPOLL_CTL_ADD, osd, &ev))
 				epoll_ctl(h->ined, EPOLL_CTL_MOD, osd, &ev);
+			
+			/* XXX: 21st of May trying to fix the bug (yes, randomly :D)
+			 	Seems to work better... */
+			ev.data.fd = sd;
+			ev.events = 0;
+			epoll_ctl(h->ined, EPOLL_CTL_MOD, sd, &ev);
 		}
 		else {
-			epoll_ctl(h->ined, EPOLL_CTL_DEL, sd, NULL);
-			close(sd);
+			h->slogf(SHADOW_LOG_LEVEL_WARNING, __FUNCTION__,
+				"unable to receive message");
+
 			int lsd = sd;
 			int *fd = g_hash_table_lookup(h->hashmap, &lsd);
+			if(!fd){
+				printf("exiting the activate, after closing the connection\n");
+				return;
+			}
 			int osd = *fd;
+			epoll_ctl(h->ined, EPOLL_CTL_DEL, sd, NULL);
+			close(sd);
+
 			epoll_ctl(h->ined, EPOLL_CTL_DEL, osd, NULL);
 			close(osd);
 			
+			g_hash_table_remove(h->hashmap, &lsd);
+			lsd = osd;
+			g_hash_table_remove(h->hashmap, &lsd);
+
 			h->slogf(SHADOW_LOG_LEVEL_MESSAGE,
-					__FUNCTION__, "closing the connections");
+					__FUNCTION__, "closing the connections sd: %d osd: %d", sd, osd);
 
 			h->isDone = 1;
 		}
