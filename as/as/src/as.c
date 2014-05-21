@@ -387,6 +387,7 @@ static void _as_activateAs(AS* h, int sd, uint32_t events) {
 			int lsd = sd;
 			int *fd = g_hash_table_lookup(h->hashmap, &lsd);
 			int osd = *fd;
+			epoll_ctl(h->ined, EPOLL_CTL_DEL, osd, NULL);
 			close(osd);
 			
 			h->slogf(SHADOW_LOG_LEVEL_MESSAGE,
