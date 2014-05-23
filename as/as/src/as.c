@@ -270,6 +270,31 @@ void udpTrace()
 	return;
 }
 
+void closeConnections(AS *h, int sd, struct partner_s *partner)
+{
+	int psd = partner->sd;
+	int lsd = sd;
+
+	h->slogf(SHADOW_LOG_LEVEL_WARNING, __FUNCTION__,
+			"Closing connections");
+
+	resetEPOLL(h->ined, sd);
+	close(sd);
+
+	resetEPOLL(h->ined, psd);
+	close(psd);
+
+	/* Disaster recovery */
+	if (partner->bufsize != 0) {
+		h->slogf(SHADOW_LOG_LEVEL_WARNING, __FUNCTION__,
+			 "A free was left out, something nasty is coming! :(");
+		free(partner->buf);
+	}
+
+	g_hash_table_remove(h->hashmap, &lsd);
+	g_hash_table_remove(h->hashmap, &psd);
+	h->isDone = 1;
+}
 /*
  * Called when a new connection is established:
  * create the two connection end-points hashmap entries
@@ -306,7 +331,13 @@ void handleNewConnection(AS *h, int sd)
 
 	cout = g_new0(gint, 1);
 	*cout = socket(AF_INET, SOCK_STREAM, 0);
-	connect(*cout, &son, sizeof(struct sockaddr_in));
+	if (connect(*cout, &son, sizeof(struct sockaddr_in))) {
+		h->slogf(SHADOW_LOG_LEVEL_MESSAGE, __FUNCTION__,
+			"Error in connect (%s)\n", strerror(errno));
+		close(*cin);
+		close(*cout);
+		return;
+	}
 
 	h->slogf(SHADOW_LOG_LEVEL_MESSAGE, __FUNCTION__,
 			"Reader: connected %d (%s)", *cout, strerror(errno));
@@ -333,9 +364,6 @@ void handleNewConnection(AS *h, int sd)
 		h->slogf(SHADOW_LOG_LEVEL_WARNING, __FUNCTION__,
 				"Reader, error in epollin (2): %s",
 				strerror(errno));
-
-	g_free(cin);
-	g_free(cout);
 }
 
 #define IS_NEW_CONNECTION(sd) (sd == h->asockin)
@@ -354,11 +382,16 @@ int handleRead(AS *h, int sd, struct partner_s *partner)
 	}
 
 	partner->bufsize = recv(sd, partner->buf, (size_t)PAGE_SIZE, 0);
+
+	if (partner->bufsize <= 0)  {
+		return 1;
+	}
+
 	partner->buf = (char *)realloc(partner->buf, partner->bufsize);
 
 	if (partner->buf == NULL) {
 		h->slogf(SHADOW_LOG_LEVEL_WARNING, __FUNCTION__,
-			 "Error in realloc\n");
+			 "Error in realloc %d\n", partner->bufsize);
 		return -1;
 	}
 
@@ -411,31 +444,6 @@ int handleWrite(AS *h, int sd, struct partner_s *partner)
 	return 0;
 }
 
-void closeConnections(AS *h, int sd, struct partner_s *partner)
-{
-	int psd = partner->sd;
-	int lsd = sd;
-
-	h->slogf(SHADOW_LOG_LEVEL_WARNING, __FUNCTION__,
-			"Closing connections");
-
-	resetEPOLL(h->ined, sd);
-	close(sd);
-
-	resetEPOLL(h->ined, psd);
-	close(psd);
-
-	/* Disaster recovery */
-	if (partner->bufsize != 0) {
-		h->slogf(SHADOW_LOG_LEVEL_WARNING, __FUNCTION__,
-			 "A free was left out, something nasty is coming! :(");
-		free(partner->buf);
-	}
-
-	g_hash_table_remove(h->hashmap, &lsd);
-	g_hash_table_remove(h->hashmap, &psd);
-	h->isDone = 1;
-}
 
 static void _as_activateAs(AS* h, int sd, uint32_t events) {
 	struct partner_s *partner;
@@ -461,7 +469,6 @@ static void _as_activateAs(AS* h, int sd, uint32_t events) {
 			res = handleRead(h, sd, partner);
 
 		if (res > 0) {
-			/* XXX */
 			/* close the connection, some error (like EPIPE)
 			 * occurred in the read. */
 			closeConnections(h, sd, partner);
