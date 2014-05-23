@@ -419,31 +419,31 @@ int handleRead(AS *h, int sd, struct partner_s *partner)
  * Called when sd can write the buffer:
  * write the buffer and wait for something to read.
  */
-int handleWrite(AS *h, int sd, struct partner_s *partner)
+int handleWrite(AS *h, int sd, int outsd, struct partner_s *me)
 {
 	ssize_t sentbytes = -1;
-	sentbytes = send(sd, partner->buf, (size_t)partner->bufsize, 0);
+	sentbytes = send(sd, me->buf, (size_t)me->bufsize, 0);
+	perror("send");
 
 	if(sentbytes) {
 		h->slogf(SHADOW_LOG_LEVEL_MESSAGE, __FUNCTION__,
-			 "successfully sent  message (size %d)", h->good_data);
+			 "successfully sent  message (size %d)", me->bufsize);
 	} else {
 		h->slogf(SHADOW_LOG_LEVEL_WARNING, __FUNCTION__,
 			 "unable to send message");
 	}
-	partner->bufsize = 0;
+	me->bufsize = 0;
 
 	/* security reason, nobody can read the buffer... */
-	memset(partner->buf, 0, partner->bufsize);
-	free(partner->buf);
+	memset(me->buf, 0, me->bufsize);
+	free(me->buf);
 
 	/* removing EPOLLOUT */
 	setEPOLLIN(h->ined, sd);
-	setEPOLLIN(h->ined, partner->sd);
+	setEPOLLIN(h->ined, outsd);
 
 	return 0;
 }
-
 
 static void _as_activateAs(AS* h, int sd, uint32_t events) {
 	struct partner_s *partner;
@@ -479,9 +479,10 @@ static void _as_activateAs(AS* h, int sd, uint32_t events) {
 	}
 
 	if(events & EPOLLOUT) {
+		struct partner_s *me = g_hash_table_lookup(h->hashmap, &partner->sd);
 		h->slogf(SHADOW_LOG_LEVEL_DEBUG, __FUNCTION__,
 				"EPOLLOUT is set %d", sd);
-		handleWrite(h, sd, partner);
+		handleWrite(h, sd, partner->sd, me);
 	}
 
 }
