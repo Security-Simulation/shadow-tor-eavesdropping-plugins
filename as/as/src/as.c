@@ -272,17 +272,18 @@ void udpTrace()
 
 void closeConnections(AS *h, int sd, struct partner_s *partner)
 {
-	int psd = partner->sd;
 	int lsd = sd;
 
+	resetEPOLL(h->ined, sd);
+	
+	if(close(sd) != 0){
+		h->slogf(SHADOW_LOG_LEVEL_WARNING, __FUNCTION__,
+			"Error in closing connections %d %s", sd, strerror(errno));
+	}
+	
 	h->slogf(SHADOW_LOG_LEVEL_WARNING, __FUNCTION__,
 			"Closing connections");
 
-	resetEPOLL(h->ined, sd);
-	close(sd);
-
-	resetEPOLL(h->ined, psd);
-	close(psd);
 
 	/* Disaster recovery */
 	if (partner->bufsize != 0) {
@@ -290,9 +291,8 @@ void closeConnections(AS *h, int sd, struct partner_s *partner)
 			 "A free was left out, something nasty is coming! :(");
 		free(partner->buf);
 	}
-
+	
 	g_hash_table_remove(h->hashmap, &lsd);
-	g_hash_table_remove(h->hashmap, &psd);
 	h->isDone = 1;
 }
 /*
@@ -382,6 +382,9 @@ int handleRead(AS *h, int sd, struct partner_s *partner)
 	}
 
 	partner->bufsize = recv(sd, partner->buf, (size_t)PAGE_SIZE, 0);
+	
+	setEPOLLALL(h->ined, partner->sd);
+	resetEPOLL(h->ined, sd);
 
 	if (partner->bufsize <= 0)  {
 		return 1;
@@ -399,19 +402,12 @@ int handleRead(AS *h, int sd, struct partner_s *partner)
 		 "Received %d %s\n", partner->bufsize, strerror(errno));
 
 	/* tell epoll we no longer want to watch this socket */
-	if (partner->bufsize > 0) {
-		h->slogf(SHADOW_LOG_LEVEL_MESSAGE,
-			__FUNCTION__,  "Received a packet: %s\n",
-				/* XXX Wrong! can be > the accept than the connection
-				 * but that the minor of problems that we have now :) */
-			(sd < partner->sd ? "client -> server" : "client <- server"));
+	h->slogf(SHADOW_LOG_LEVEL_MESSAGE,
+		__FUNCTION__,  "Received a packet: %s\n",
+			/* XXX Wrong! can be > the accept than the connection
+			 * but that the minor of problems that we have now :) */
+		(sd < partner->sd ? "client -> server" : "client <- server"));
 
-		setEPOLLALL(h->ined, partner->sd);
-		resetEPOLL(h->ined, sd);
-	} else {
-		/* Close the connection signal. */
-		return 1;
-	}
 	return 0;
 }
 
@@ -481,10 +477,17 @@ static void _as_activateAs(AS* h, int sd, uint32_t events) {
 	if(events & EPOLLOUT) {
 		struct partner_s *me = g_hash_table_lookup(h->hashmap, &partner->sd);
 
-		if (partner == NULL) {
-			h->slogf(SHADOW_LOG_LEVEL_DEBUG, __FUNCTION__,
-				"Null pointer in lookup of %d (me).", sd);
-			_exit(EXIT_FAILURE);
+		if (me == NULL) {
+			if (h->isDone == 1){
+				/* If it reaches this point, it means that the other 
+			   		end point closed its socket descriptior (connection closed).
+			   		Thus this socked descriptor must be closed too. */
+				closeConnections(h, sd, partner);
+			}else{
+				h->slogf(SHADOW_LOG_LEVEL_DEBUG, __FUNCTION__,
+					"Null pointer in lookup of %d (me) (connection closed).", sd);
+				_exit(EXIT_FAILURE);
+			}
 		}
 
 		h->slogf(SHADOW_LOG_LEVEL_DEBUG, __FUNCTION__,
@@ -530,26 +533,3 @@ int as_isDone(AS* h) {
 	return h->isDone;
 }
 
-int as_resetAccept(AS* h){
-	h->slogf(SHADOW_LOG_LEVEL_MESSAGE, __FUNCTION__,
-			"resetting the whole thing");
-
-	struct epoll_event ev;
-	ev.events = EPOLLIN;
-	ev.data.fd = h->asockin;
-	/*	if (epoll_ctl(h->ined, EPOLL_CTL_DEL, h->aout, NULL) == -1){
-		h->slogf(SHADOW_LOG_LEVEL_CRITICAL, __FUNCTION__,
-		"unable to reset everything: error in epoll_ctl_del (%s)", strerror(errno));
-		return -1;
-		}*/
-	if (epoll_ctl(h->ined, EPOLL_CTL_ADD, h->asockin, &ev) == -1){
-		h->slogf(SHADOW_LOG_LEVEL_CRITICAL, __FUNCTION__,
-			"unable to reset everything: error in epoll_ctl_add (%s)",
-			strerror(errno));
-		return -1;
-	}
-
-	h->firstTime = 1;
-
-	return 0;
-}
