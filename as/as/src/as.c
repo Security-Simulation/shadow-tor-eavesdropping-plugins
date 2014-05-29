@@ -331,7 +331,8 @@ void handleNewConnection(AS *h, int sd)
 
 	cout = g_new0(gint, 1);
 	*cout = socket(AF_INET, SOCK_STREAM, 0);
-	if (connect(*cout, &son, sizeof(struct sockaddr_in))) {
+	if (connect(*cout, &son, sizeof(struct sockaddr_in)) && errno != EINPROGRESS ) {
+		/* TODO: This is a very bad practise, we promise we will do it in the right way :D */
 		h->slogf(SHADOW_LOG_LEVEL_MESSAGE, __FUNCTION__,
 			"Error in connect (%s)\n", strerror(errno));
 		close(*cin);
@@ -419,7 +420,6 @@ int handleWrite(AS *h, int sd, int outsd, struct partner_s *me)
 {
 	ssize_t sentbytes = -1;
 	sentbytes = send(sd, me->buf, (size_t)me->bufsize, 0);
-	perror("send");
 
 	if(sentbytes) {
 		h->slogf(SHADOW_LOG_LEVEL_MESSAGE, __FUNCTION__,
@@ -488,11 +488,12 @@ static void _as_activateAs(AS* h, int sd, uint32_t events) {
 					"Null pointer in lookup of %d (me) (connection closed).", sd);
 				_exit(EXIT_FAILURE);
 			}
-		}
+		}else{
 
-		h->slogf(SHADOW_LOG_LEVEL_DEBUG, __FUNCTION__,
+			h->slogf(SHADOW_LOG_LEVEL_DEBUG, __FUNCTION__,
 				"EPOLLOUT is set %d", sd);
-		handleWrite(h, sd, partner->sd, me);
+			handleWrite(h, sd, partner->sd, me);
+		}
 	}
 
 }
