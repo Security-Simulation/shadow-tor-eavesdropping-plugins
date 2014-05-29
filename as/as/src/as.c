@@ -452,8 +452,9 @@ static void _as_activateAs(AS* h, int sd, uint32_t events) {
 
 	if (partner == NULL && !IS_NEW_CONNECTION(sd)) {
 		h->slogf(SHADOW_LOG_LEVEL_DEBUG, __FUNCTION__,
-				"Null pointer in lookup of %d.", sd);
-		_exit(EXIT_FAILURE);
+				"Null pointer in lookup of %d (partner).", sd);
+		/*_exit(EXIT_FAILURE);*/
+		return;
 	}
 
 	h->slogf(SHADOW_LOG_LEVEL_MESSAGE, __FUNCTION__,
@@ -480,6 +481,14 @@ static void _as_activateAs(AS* h, int sd, uint32_t events) {
 
 	if(events & EPOLLOUT) {
 		struct partner_s *me = g_hash_table_lookup(h->hashmap, &partner->sd);
+
+		if (partner == NULL) {
+			h->slogf(SHADOW_LOG_LEVEL_DEBUG, __FUNCTION__,
+				"Null pointer in lookup of %d (me).", sd);
+			/*_exit(EXIT_FAILURE);*/
+			return;
+		}
+
 		h->slogf(SHADOW_LOG_LEVEL_DEBUG, __FUNCTION__,
 				"EPOLLOUT is set %d", sd);
 		handleWrite(h, sd, partner->sd, me);
