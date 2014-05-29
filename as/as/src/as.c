@@ -453,8 +453,7 @@ static void _as_activateAs(AS* h, int sd, uint32_t events) {
 	if (partner == NULL && !IS_NEW_CONNECTION(sd)) {
 		h->slogf(SHADOW_LOG_LEVEL_DEBUG, __FUNCTION__,
 				"Null pointer in lookup of %d (partner).", sd);
-		/*_exit(EXIT_FAILURE);*/
-		return;
+		_exit(EXIT_FAILURE);
 	}
 
 	h->slogf(SHADOW_LOG_LEVEL_MESSAGE, __FUNCTION__,
@@ -485,8 +484,7 @@ static void _as_activateAs(AS* h, int sd, uint32_t events) {
 		if (partner == NULL) {
 			h->slogf(SHADOW_LOG_LEVEL_DEBUG, __FUNCTION__,
 				"Null pointer in lookup of %d (me).", sd);
-			/*_exit(EXIT_FAILURE);*/
-			return;
+			_exit(EXIT_FAILURE);
 		}
 
 		h->slogf(SHADOW_LOG_LEVEL_DEBUG, __FUNCTION__,
