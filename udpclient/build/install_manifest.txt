@@ -1,0 +1,2 @@
+/home/butchertkd/.shadow/plugins/libshadow-plugin-udpclient.so
+/home/butchertkd/.shadow/bin/udpclient-tor

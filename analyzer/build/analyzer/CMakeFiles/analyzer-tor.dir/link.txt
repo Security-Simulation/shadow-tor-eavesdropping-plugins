@@ -1,0 +1,1 @@
+/home/butchertkd/.local/bin/clang   -g -fno-inline -fno-strict-aliasing -U_FORTIFY_SOURCE    CMakeFiles/analyzer-tor.dir/src/analyzer-main.c.o CMakeFiles/analyzer-tor.dir/src/analyzer.c.o  -o analyzer-tor -rdynamic 

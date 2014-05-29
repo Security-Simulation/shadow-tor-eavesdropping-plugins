@@ -3,12 +3,9 @@
  */
 
 #include "as.h"
-#include <linux/ip.h>
-#include <arpa/inet.h>
-
-#include <errno.h>
 
 #define PAGE_SIZE 4096
+#define MAX_CLIENTS 1024
 
 /* all state for as is stored here */
 struct _AS {
@@ -32,52 +29,47 @@ struct _AS {
 	int good_data;
 
 	int endread;
-	
+
 	int firstTime;
 
 	in_addr_t hostIP, remoteIP;	
+
+	GHashTable *hashmap;
+};
+
+struct partner_s {
+	int sd;
+	ssize_t bufsize;
+	char *buf;
 };
 
 /* if option is specified, run as client, else run as server */
 static const char* USAGE = 
-	"USAGE: autosys hostname_bind:LISTEN_PORT hostname_connect:OUT_PORT\n";
+"USAGE: autosys hostname_bind:LISTEN_PORT hostname_connect:OUT_PORT\n";
 
+/* TODO forse aggiungere un controllo per il mod? */
+int setEPOLL(int ed, int sd, uint32_t events)
+{
+	struct epoll_event ev;
+	ev.events = events;
+	ev.data.fd = sd;
+	if(epoll_ctl(ed, EPOLL_CTL_ADD, sd, &ev))
+		epoll_ctl(ed, EPOLL_CTL_MOD, sd, &ev);
+	return 0;
+}
+
+int resetEPOLL(int ed, int sd)
+{
+	epoll_ctl(ed, EPOLL_CTL_DEL, sd, NULL);
+	return 0;
+}
+#define setEPOLLIN(ed, sd) setEPOLL(ed, sd, EPOLLIN)
+#define setEPOLLOUT(ed, sd) setEPOLL(ed, sd, EPOLLOUT)
+#define setEPOLLALL(ed, sd) setEPOLL(ed, sd, EPOLLOUT|EPOLLIN)
 
 /* At the BEGINNING this is the proxy writer end, whose that 
    communicates with the real server (this would be a reader too then) */
 static int _as_startWriter(AS* h) {
-	struct sockaddr_in son = {
-		.sin_family = AF_INET,
-		.sin_port = h->outport
-	};
-
-	son.sin_addr.s_addr = h->remoteIP; 
-	h->aout = socket(AF_INET, SOCK_STREAM, 0);
-	if (h->aout == -1) {
-		h->slogf(SHADOW_LOG_LEVEL_CRITICAL, __FUNCTION__,
-				"unable to start writer: error in socket");
-		return -1;
-	}
-
-	if (connect(h->aout, (struct sockaddr *)&son,
-			sizeof(struct sockaddr_in)) && errno != EINPROGRESS) {
-		h->slogf(SHADOW_LOG_LEVEL_CRITICAL, __FUNCTION__,
-				"unable to start writer: error in connect");
-		perror("");
-		return -1;
-	}
-	/* specify the events to watch for ( on this socket). */
-	struct epoll_event ev;
-	ev.events = EPOLLIN;
-	ev.data.fd = h->aout;
-
-	/* start watching the client socket */
-	if (epoll_ctl( h->ined, EPOLL_CTL_ADD, h->aout, &ev) == -1){
-		h->slogf(SHADOW_LOG_LEVEL_CRITICAL, __FUNCTION__,
-			"unable to start writer: error in epoll_ctl (%s)",
-			strerror(errno));
-		return -1;
-	}
 	h->slogf(SHADOW_LOG_LEVEL_MESSAGE, __FUNCTION__,
 			"Writer: started.");
 	return 0;
@@ -87,8 +79,6 @@ static int _as_startWriter(AS* h) {
    communicates with the real client (this would be a writer too then) */
 static int _as_startReader(AS* h) {
 	/* create the socket and get a socket descriptor */
-
-	int true = 1;
 
 	struct sockaddr_in sin = {
 		.sin_family = AF_INET,
@@ -106,14 +96,6 @@ static int _as_startReader(AS* h) {
 	}
 	h->slogf(SHADOW_LOG_LEVEL_MESSAGE, __FUNCTION__,
 			"Reader: create socket %d", h->asockin);
-
-	/* 
-	   if ( setsockopt(h->asockin, SOL_SOCKET, SO_REUSEADDR, &true, sizeof(int)) < 0 ){
-	   h->slogf(SHADOW_LOG_LEVEL_CRITICAL, __FUNCTION__,
-	   "unable to start reader: error in setsockopt SO_REUSEADDR");
-	   return -1;
-	   }
-	 */
 
 	if (bind(h->asockin, (struct sockaddr *)&sin, sizeof(struct sockaddr_in))){
 		h->slogf(SHADOW_LOG_LEVEL_CRITICAL, __FUNCTION__,
@@ -135,24 +117,6 @@ static int _as_startReader(AS* h) {
 				"unable to start reader: error in epoll_ctl (%s)", strerror(errno));
 		return -1;
 	}
-	/* accept everything form the h->asockin socket */
-	/* XXX resource temporarily unaviable, not getting the connection XXX */
-	/*
-	   h->asockin = accept(h->asockin, NULL, NULL);
-
-	   h->slogf(SHADOW_LOG_LEVEL_MESSAGE, __FUNCTION__,
-	   "Reader: accepted connection %d (%s)", h->asockin, strerror(errno));
-	 */
-	//	struct epoll_event ev;
-	//	ev.events = EPOLLIN;
-	//	ev.data.fd = h->asockin;
-
-	/* start watching the client socket */
-	//	if (epoll_ctl(h->ined, EPOLL_CTL_ADD, h->asockin, &ev) == -1){
-	//		h->slogf(SHADOW_LOG_LEVEL_CRITICAL, __FUNCTION__,
-	//				"unable to start reader: error in epoll_ctl (%s)", strerror(errno));
-	//		return -1;
-	//	}
 
 	h->slogf(SHADOW_LOG_LEVEL_MESSAGE, __FUNCTION__,
 			"Reader started.");
@@ -203,7 +167,7 @@ AS* as_new(int argc, char* argv[], ShadowLogFunc slogf) {
 			"myhostname %s", myhostname);
 
 	/* use epoll to asynchronously watch events for all of our sockets */
-	int inputEd = epoll_create(1);
+	int inputEd = epoll_create(MAX_CLIENTS);
 	if(inputEd == -1) {
 		slogf(SHADOW_LOG_LEVEL_CRITICAL, __FUNCTION__,
 				"Error in main epoll_create");
@@ -222,7 +186,7 @@ AS* as_new(int argc, char* argv[], ShadowLogFunc slogf) {
 		while (hostInfo->ai_next) hostInfo = hostInfo->ai_next;
 
 		inaddr = ((struct sockaddr_in *)(hostInfo->ai_addr))->sin_addr.s_addr;
-	
+
 	} else{
 		slogf(SHADOW_LOG_LEVEL_CRITICAL, __FUNCTION__,
 				"Error in main getaddrinfo (%s)", strerror(errno));
@@ -242,7 +206,7 @@ AS* as_new(int argc, char* argv[], ShadowLogFunc slogf) {
 		outaddr = htonl(INADDR_ANY);
 	}else if (getaddrinfo(hostname_connect, NULL, NULL, &hostInfo) >= 0) {
 		while (hostInfo->ai_next) hostInfo = hostInfo->ai_next;
-	
+
 		outaddr = ((struct sockaddr_in *)(hostInfo->ai_addr))->sin_addr.s_addr;
 	} else{
 		slogf(SHADOW_LOG_LEVEL_CRITICAL, __FUNCTION__,
@@ -251,9 +215,9 @@ AS* as_new(int argc, char* argv[], ShadowLogFunc slogf) {
 		return NULL;
 	}
 	perror("getaddrinfo: ");
-	
+
 	slogf(SHADOW_LOG_LEVEL_MESSAGE, __FUNCTION__,
-		"%s inaddr (%s), %s outaddr (%s)", hostname_bind, inet_ntoa(*(struct in_addr *)&inaddr), hostname_connect, inet_ntop(AF_INET, &outaddr, buf1,100));
+			"%s inaddr (%s), %s outaddr (%s)", hostname_bind, inet_ntoa(*(struct in_addr *)&inaddr), hostname_connect, inet_ntop(AF_INET, &outaddr, buf1,100));
 
 
 
@@ -271,7 +235,8 @@ AS* as_new(int argc, char* argv[], ShadowLogFunc slogf) {
 	h->hostIP = inaddr;
 	h->remoteIP = outaddr;
 	h->firstTime = 1;
-	
+	h->hashmap = g_hash_table_new(g_int_hash, g_int_equal);
+
 	if (hostInfo)
 		freeaddrinfo(hostInfo);
 
@@ -291,166 +256,255 @@ AS* as_new(int argc, char* argv[], ShadowLogFunc slogf) {
 void as_free(AS* h) {
 	assert(h);
 
+	g_hash_table_destroy(h->hashmap);
+
 	if(h->ined)
 		close(h->ined);
 
 	free(h);
 }
 
+/* Function to trace udp in tor */
+void udpTrace()
+{
+	return;
+}
+
+void closeConnections(AS *h, int sd, struct partner_s *partner)
+{
+	int lsd = sd;
+
+	resetEPOLL(h->ined, sd);
+	
+	if(close(sd) != 0){
+		h->slogf(SHADOW_LOG_LEVEL_WARNING, __FUNCTION__,
+			"Error in closing connections %d %s", sd, strerror(errno));
+	}
+	
+	h->slogf(SHADOW_LOG_LEVEL_WARNING, __FUNCTION__,
+			"Closing connections");
+
+
+	/* Disaster recovery */
+	if (partner->bufsize != 0) {
+		h->slogf(SHADOW_LOG_LEVEL_WARNING, __FUNCTION__,
+			 "A free was left out, something nasty is coming! :(");
+		free(partner->buf);
+	}
+	
+	g_hash_table_remove(h->hashmap, &lsd);
+	h->isDone = 1;
+}
+/*
+ * Called when a new connection is established:
+ * create the two connection end-points hashmap entries
+ * and set EPOLLIN for them.
+ */
+void handleNewConnection(AS *h, int sd)
+{
+	/* Due to the shadow accept non-blocking issue */
+	gint	*cin, *cout;
+	struct partner_s	*inEnd, *outEnd;
+
+	/* Build a new connection to the server */
+	struct sockaddr_in son = {
+		.sin_family = AF_INET,
+		.sin_port = h->outport
+	};
+	son.sin_addr.s_addr = h->remoteIP;
+	/* XXX CHECK */
+	if(h->isDone == 1) {
+		if (_as_startWriter(h) < 0)
+			exit(EXIT_FAILURE);
+		h->isDone = 0;
+	}
+	/* END CHECK */
+
+	cin = g_new0(gint, 1);
+	*cin = accept(h->asockin, NULL, NULL);
+
+	h->slogf(SHADOW_LOG_LEVEL_MESSAGE, __FUNCTION__,
+			"Reader: accepted connection %d (%s)", *cin,
+			strerror(errno));
+
+	udpTrace();
+
+	cout = g_new0(gint, 1);
+	*cout = socket(AF_INET, SOCK_STREAM, 0);
+	if (connect(*cout, &son, sizeof(struct sockaddr_in)) && errno != EINPROGRESS ) {
+		/* TODO: This is a very bad practise, we promise we will do it in the right way :D */
+		h->slogf(SHADOW_LOG_LEVEL_MESSAGE, __FUNCTION__,
+			"Error in connect (%s)\n", strerror(errno));
+		close(*cin);
+		close(*cout);
+		return;
+	}
+
+	h->slogf(SHADOW_LOG_LEVEL_MESSAGE, __FUNCTION__,
+			"Reader: connected %d (%s)", *cout, strerror(errno));
+
+	printf("Reader Replaced %d:%d\n", *cin, *cout);
+
+	inEnd = g_new0(struct partner_s, 1);
+	outEnd = g_new0(struct partner_s, 1);
+
+	outEnd->sd = *cout;
+	outEnd->bufsize = 0;
+	g_hash_table_replace(h->hashmap, cin, outEnd);
+
+	inEnd->sd = *cin;
+	inEnd->bufsize = 0;
+	g_hash_table_replace(h->hashmap, cout, inEnd);
+
+	if(setEPOLLIN(h->ined, *cin))
+		h->slogf(SHADOW_LOG_LEVEL_WARNING, __FUNCTION__,
+				"Reader, error in epollin (1): %s",
+				strerror(errno));
+
+	if(setEPOLLIN(h->ined, *cout))
+		h->slogf(SHADOW_LOG_LEVEL_WARNING, __FUNCTION__,
+				"Reader, error in epollin (2): %s",
+				strerror(errno));
+}
+
+#define IS_NEW_CONNECTION(sd) (sd == h->asockin)
+
+/*
+ * Called when sd can read and set the buffer:
+ * reset the input file descriptor and wait for a successfull write.
+ */
+int handleRead(AS *h, int sd, struct partner_s *partner)
+{
+	partner->buf = (char *)calloc(PAGE_SIZE, sizeof(char));
+	if (partner->buf == NULL) {
+		h->slogf(SHADOW_LOG_LEVEL_WARNING, __FUNCTION__,
+			 "Error in calloc\n");
+		return -1;
+	}
+
+	partner->bufsize = recv(sd, partner->buf, (size_t)PAGE_SIZE, 0);
+	
+	setEPOLLALL(h->ined, partner->sd);
+	resetEPOLL(h->ined, sd);
+
+	if (partner->bufsize <= 0)  {
+		return 1;
+	}
+
+	partner->buf = (char *)realloc(partner->buf, partner->bufsize);
+
+	if (partner->buf == NULL) {
+		h->slogf(SHADOW_LOG_LEVEL_WARNING, __FUNCTION__,
+			 "Error in realloc %d\n", partner->bufsize);
+		return -1;
+	}
+
+	h->slogf(SHADOW_LOG_LEVEL_MESSAGE, __FUNCTION__,
+		 "Received %d %s\n", partner->bufsize, strerror(errno));
+
+	/* tell epoll we no longer want to watch this socket */
+	h->slogf(SHADOW_LOG_LEVEL_MESSAGE,
+		__FUNCTION__,  "Received a packet: %s\n",
+			/* XXX Wrong! can be > the accept than the connection
+			 * but that the minor of problems that we have now :) */
+		(sd < partner->sd ? "client -> server" : "client <- server"));
+
+	return 0;
+}
+
+/*
+ * Called when sd can write the buffer:
+ * write the buffer and wait for something to read.
+ */
+int handleWrite(AS *h, int sd, int outsd, struct partner_s *me)
+{
+	ssize_t sentbytes = -1;
+	sentbytes = send(sd, me->buf, (size_t)me->bufsize, 0);
+
+	if(sentbytes) {
+		h->slogf(SHADOW_LOG_LEVEL_MESSAGE, __FUNCTION__,
+			 "successfully sent  message (size %d)", me->bufsize);
+	} else {
+		h->slogf(SHADOW_LOG_LEVEL_WARNING, __FUNCTION__,
+			 "unable to send message");
+	}
+	me->bufsize = 0;
+
+	/* security reason, nobody can read the buffer... */
+	memset(me->buf, 0, me->bufsize);
+	free(me->buf);
+
+	/* removing EPOLLOUT */
+	setEPOLLIN(h->ined, sd);
+	setEPOLLIN(h->ined, outsd);
+
+	return 0;
+}
 
 static void _as_activateAs(AS* h, int sd, uint32_t events) {
-	h->slogf(SHADOW_LOG_LEVEL_MESSAGE, __FUNCTION__,
-			"In the activate %x.", events);
+	struct partner_s *partner;
+	int lsd = sd;
+	partner = g_hash_table_lookup(h->hashmap, &lsd);
 
-	if(events & EPOLLOUT) {
+	if (partner == NULL && !IS_NEW_CONNECTION(sd)) {
 		h->slogf(SHADOW_LOG_LEVEL_DEBUG, __FUNCTION__,
-				"EPOLLOUT is set %d", sd);
+				"Null pointer in lookup of %d (partner).", sd);
+		_exit(EXIT_FAILURE);
 	}
+
+	h->slogf(SHADOW_LOG_LEVEL_MESSAGE, __FUNCTION__,
+			"In the activate %d.", sd);
+
 	if(events & EPOLLIN) {
+		int res = 0;
 		h->slogf(SHADOW_LOG_LEVEL_DEBUG, __FUNCTION__,
 				"EPOLLIN is set %d", sd);
-	}
+		if (IS_NEW_CONNECTION(sd))
+			handleNewConnection(h, sd);
+		else
+			res = handleRead(h, sd, partner);
 
-#ifdef AS_DEBUG
-	usleep(500000);
-#endif
-
-	int changed = 1;
-	int osd = h->aout;
-	if (sd == osd) {
-		changed = 0;
-		osd = h->ain;
-	}
-
-	if (h->firstTime == 1 ) { /* Due to the shadow accept non-blocking issue */ 
-		if(h->isDone == 1) {
-			if ( _as_startWriter(h) < 0 ){
-				exit(EXIT_FAILURE);
-			}  
-			h->isDone = 0;
-		}
-		
-		h->ain = accept(h->asockin, NULL, NULL);
-		h->firstTime = 0;
-
-		h->slogf(SHADOW_LOG_LEVEL_MESSAGE, __FUNCTION__,
-				"Reader: accepted connection %d (%s)", h->ain, strerror(errno));
-		struct epoll_event ev;
-		ev.events = EPOLLIN;
-		ev.data.fd = h->ain;
-		if (epoll_ctl(h->ined, EPOLL_CTL_DEL, h->asockin, NULL) == -1){
-			h->slogf(SHADOW_LOG_LEVEL_CRITICAL, __FUNCTION__,
-					"unable to start reader: error in epoll_ctl_del (%s)", strerror(errno));
-			return;
-		}
-		if (epoll_ctl(h->ined, EPOLL_CTL_ADD, h->ain, &ev) == -1){
-			h->slogf(SHADOW_LOG_LEVEL_CRITICAL, __FUNCTION__,
-					"unable to start reader: error in epoll_ctl_add (%s)", strerror(errno));
-			return;
-		}
-/*		if (epoll_ctl(h->ined, EPOLL_CTL_ADD, h->ain, &ev) == -1){
-			h->slogf(SHADOW_LOG_LEVEL_CRITICAL, __FUNCTION__,
-					"unable to start reader: error in epoll_ctl_add (%s)", strerror(errno));
-			return;
-		}*/
-	} 
-	else if((events & EPOLLOUT) && (h->good_data > 0)) {
-
-		h->good_data = send(sd, h->buf, (size_t)h->good_data, 0);
-
-		h->slogf(SHADOW_LOG_LEVEL_MESSAGE, __FUNCTION__,
-				"debug point (size %d)", h->good_data);
-
-		if(h->good_data) {
-			h->slogf(SHADOW_LOG_LEVEL_MESSAGE, __FUNCTION__,
-					"successfully sent  message (size %d)", h->good_data);
-		} else {
-			h->slogf(SHADOW_LOG_LEVEL_WARNING, __FUNCTION__,
-					"unable to send message");
-		}
-		h->good_data = 0;
-
-		/* removing EPOLLOUT from h->aout */
-		struct epoll_event ev = {
-			.events = EPOLLIN,
-			.data.fd = sd
-		};
-		epoll_ctl(h->ined, EPOLL_CTL_MOD, sd, &ev);
-
-		/* removing EPOLLOUT from h->aout */
-		ev.events = EPOLLIN;
-		ev.data.fd = osd;
-		epoll_ctl(h->ined, EPOLL_CTL_MOD, osd, &ev);
-
-		if (h->endread) //TODO: check if writend too
-		{
-			h->slogf(SHADOW_LOG_LEVEL_MESSAGE, __FUNCTION__,
-					"stream ended");
-		}
-	} else if((events & EPOLLIN) && (h->good_data == 0)) {
-
-
-		h->endread = 0;
-		h->good_data = recv(sd, h->buf, (size_t)PAGE_SIZE, 0);
-		h->slogf(SHADOW_LOG_LEVEL_MESSAGE, __FUNCTION__,
-			 "received %d %s\n", h->good_data, strerror(errno));
-		/* log result */
-		if(h->good_data > 0) {
-			int i;
-			h->slogf(SHADOW_LOG_LEVEL_MESSAGE, __FUNCTION__,
-					"successfully received a message:");
-#ifdef AS_DEBUG
-			for (i = 0; i < h->good_data; i++)
-				printf("%c", h->buf[i]);
-			printf("\n");
-#endif
-		} else {
-			h->slogf(SHADOW_LOG_LEVEL_WARNING, __FUNCTION__,
-					"unable to receive message");
-		}
-
-		/* tell epoll we no longer want to watch this socket */
-		if (h->good_data <= PAGE_SIZE &&  h->good_data > 0)
-		{
-			if(h->good_data < PAGE_SIZE)
-				h->endread = 1;
-			struct epoll_event ev = {
-				.events = EPOLLOUT|EPOLLIN,
-			};
-			ev.data.fd = osd;
-
-			h->slogf(SHADOW_LOG_LEVEL_MESSAGE,
-					__FUNCTION__,  "received a packet: %s\n",
-					(changed?  "client -> server" : "client <- server"));
-
-			if(epoll_ctl(h->ined, EPOLL_CTL_ADD, osd, &ev))
-				epoll_ctl(h->ined, EPOLL_CTL_MOD, osd, &ev);
-
-			/* XXX roba nuova */
-			ev.events = 0x0;
-			ev.data.fd = sd;
-			epoll_ctl(h->ined, EPOLL_CTL_MOD, sd, &ev);
-		}
-		else {
-			epoll_ctl(h->ined, EPOLL_CTL_DEL, h->ain, NULL);
-			close(h->ain);
-			close(h->aout);
-			
-			h->slogf(SHADOW_LOG_LEVEL_MESSAGE,
-					__FUNCTION__, "closing the connections");
-
-			h->isDone = 1;
+		if (res > 0) {
+			/* close the connection, some error (like EPIPE)
+			 * occurred in the read. */
+			closeConnections(h, sd, partner);
+		} else if (res < 0) {
+			/* Fatal error occurred. */
+			_exit(EXIT_FAILURE);
 		}
 	}
+
+	if(events & EPOLLOUT) {
+		struct partner_s *me = g_hash_table_lookup(h->hashmap, &partner->sd);
+
+		if (me == NULL) {
+			if (h->isDone == 1){
+				/* If it reaches this point, it means that the other 
+			   		end point closed its socket descriptior (connection closed).
+			   		Thus this socked descriptor must be closed too. */
+				closeConnections(h, sd, partner);
+			}else{
+				h->slogf(SHADOW_LOG_LEVEL_DEBUG, __FUNCTION__,
+					"Null pointer in lookup of %d (me) (connection closed).", sd);
+				_exit(EXIT_FAILURE);
+			}
+		}else{
+
+			h->slogf(SHADOW_LOG_LEVEL_DEBUG, __FUNCTION__,
+				"EPOLLOUT is set %d", sd);
+			handleWrite(h, sd, partner->sd, me);
+		}
+	}
+
 }
 
 void as_ready(AS* h) {
 	assert(h);
 
 	/* collect the events that are ready */
-	struct epoll_event epevs[10];
-	int nfds = epoll_wait(h->ined, epevs, 10, 0);
-	
+	struct epoll_event epevs[MAX_CLIENTS];
+	int nfds = epoll_wait(h->ined, epevs, MAX_CLIENTS, 0);
+
 	h->slogf(SHADOW_LOG_LEVEL_MESSAGE, __FUNCTION__,
 			"As_ready : Successfull");
 
@@ -460,12 +514,12 @@ void as_ready(AS* h) {
 		return;
 	}
 
+
 	/* activate correct component for every socket thats ready */
 	for(int i = 0; i < nfds; i++) {
 		int d = epevs[i].data.fd;
 		uint32_t e = epevs[i].events;
-		/* if (e) */
-			_as_activateAs(h, d, e);
+		_as_activateAs(h, d, e);
 	}
 }
 
@@ -480,25 +534,3 @@ int as_isDone(AS* h) {
 	return h->isDone;
 }
 
-int as_resetAccept(AS* h){
-	h->slogf(SHADOW_LOG_LEVEL_MESSAGE, __FUNCTION__,
-			"resetting the whole thing");
-	
-	struct epoll_event ev;
-	ev.events = EPOLLIN;
-	ev.data.fd = h->asockin;
-/*	if (epoll_ctl(h->ined, EPOLL_CTL_DEL, h->aout, NULL) == -1){
-		h->slogf(SHADOW_LOG_LEVEL_CRITICAL, __FUNCTION__,
-				"unable to reset everything: error in epoll_ctl_del (%s)", strerror(errno));
-		return -1;
-	}*/
-	if (epoll_ctl(h->ined, EPOLL_CTL_ADD, h->asockin, &ev) == -1){
-		h->slogf(SHADOW_LOG_LEVEL_CRITICAL, __FUNCTION__,
-				"unable to reset everything: error in epoll_ctl_add (%s)", strerror(errno));
-		return -1;
-	}
-	
-	h->firstTime = 1;
-	
-	return 0;
-}

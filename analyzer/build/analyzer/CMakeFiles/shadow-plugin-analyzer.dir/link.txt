@@ -1,0 +1,1 @@
+/home/butchertkd/.local/bin/clang  -fPIC  -g -fno-inline -fno-strict-aliasing -U_FORTIFY_SOURCE   -shared -Wl,-soname,libshadow-plugin-analyzer.so -o libshadow-plugin-analyzer.so shadow-plugin-analyzer.hoisted.bc 

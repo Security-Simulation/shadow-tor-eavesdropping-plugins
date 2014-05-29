@@ -15,9 +15,13 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
+#include <linux/ip.h>
+#include <arpa/inet.h>
 #include <errno.h>
 
 #include <shd-library.h>
+
+#include <glib.h>
 
 #define OUTGOING 0
 #define INCOMING 1

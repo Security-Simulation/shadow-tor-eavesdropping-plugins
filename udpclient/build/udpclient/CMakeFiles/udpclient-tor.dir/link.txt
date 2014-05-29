@@ -1,0 +1,1 @@
+/home/butchertkd/.local/bin/clang   -g -fno-inline -fno-strict-aliasing -U_FORTIFY_SOURCE    CMakeFiles/udpclient-tor.dir/src/udpclient-main.c.o CMakeFiles/udpclient-tor.dir/src/udpclient.c.o  -o udpclient-tor -rdynamic 

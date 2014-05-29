@@ -4,6 +4,7 @@
 
 #include "as.h"
 #include <signal.h>
+#include <stdarg.h>
 
 /* our as code only relies on the log part of shadowlib,
  * so we need to supply that implementation here since this is
@@ -76,13 +77,7 @@ int main(int argc, char *argv[]) {
 		mylog("processing event");
 		if(nReadyFDs > 0) {
 			as_ready(asState);
-		}
-
-		/* break out if as is done */
-		if(as_isDone(asState)) {
-			as_resetAccept(asState);
-			/*break;*/
-		}
+		}	
 	}
 
 	mylog("finished main loop, cleaning up");

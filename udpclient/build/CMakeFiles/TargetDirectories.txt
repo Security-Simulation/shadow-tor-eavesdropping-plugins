@@ -1,0 +1,4 @@
+/home/butchertkd/shadow/shadow-tor-eavesdropping-plugins/udpclient/build/CMakeFiles/LLVMHoistGlobals.dir
+/home/butchertkd/shadow/shadow-tor-eavesdropping-plugins/udpclient/build/udpclient/CMakeFiles/shadow-plugin-udpclient.dir
+/home/butchertkd/shadow/shadow-tor-eavesdropping-plugins/udpclient/build/udpclient/CMakeFiles/shadow-plugin-udpclient-bitcode.dir
+/home/butchertkd/shadow/shadow-tor-eavesdropping-plugins/udpclient/build/udpclient/CMakeFiles/udpclient-tor.dir

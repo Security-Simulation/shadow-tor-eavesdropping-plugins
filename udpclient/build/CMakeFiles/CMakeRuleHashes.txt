@@ -1,0 +1,8 @@
+# Hashes of file build rules.
+9e1bf9d92e8f77cce9e595a75f1869d2 CMakeFiles/LLVMHoistGlobals
+820d1a54860909204d30f506e28021e4 udpclient/CMakeFiles/shadow-plugin-udpclient-bitcode
+9e3fb0d5b19d83db75ed70b30018a67d udpclient/shadow-plugin-udpclient-bitcode.bc
+8f10a1d9f0a32541c6f05968ff3e9883 udpclient/shadow-plugin-udpclient.bc
+d3f69c960f2aa3385770d35790d858d4 udpclient/shadow-plugin-udpclient.hoisted.bc
+8bc4e10355121994a8489919b5c3f080 udpclient/udpclient-plugin.c.bc
+903425d59531993178bd180e85e0bf47 udpclient/udpclient.c.bc
