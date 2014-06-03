@@ -18,21 +18,18 @@ struct _AS {
 	/* track if our client got a response and we can exit */
 	int isDone;
 
-	/* the two socket descriptor for the two communication directions */
-	int ain;
-	int aout;
 	int asockin;
-	int outport, inport;
+	int	outport,
+		inport,
+		traceport;
 
-	char buf[PAGE_SIZE];
+	in_addr_t	hostIP,
+			remoteIP,
+			traceIP;
 
-	int good_data;
-
-	int endread;
-
-	int firstTime;
-
-	in_addr_t hostIP, remoteIP;	
+	int serverMode;
+	int tracerSocket;
+	struct sockaddr_in tracerSin;
 
 	GHashTable *hashmap;
 };
@@ -66,6 +63,46 @@ int resetEPOLL(int ed, int sd)
 #define setEPOLLIN(ed, sd) setEPOLL(ed, sd, EPOLLIN)
 #define setEPOLLOUT(ed, sd) setEPOLL(ed, sd, EPOLLOUT)
 #define setEPOLLALL(ed, sd) setEPOLL(ed, sd, EPOLLOUT|EPOLLIN)
+
+/* Prepare the proxy to trace the connections */
+void prepareToTrace(int argc, char **argv, AS *h)
+{
+	if (argc > 4 && !strcmp("server", argv[4])) {
+		printf("server mode activated\n");
+		/* Server Mode */
+		h->serverMode = 1;
+	}
+
+	h->tracerSocket = socket(AF_INET, SOCK_DGRAM, 0);
+	perror("socketudp");
+	h->tracerSin.sin_family = AF_INET;
+	h->tracerSin.sin_port = h->traceport;
+	h->tracerSin.sin_addr.s_addr = h->traceIP;
+	return;
+}
+
+in_addr_t dnsQuery(char *hostname)
+{
+	struct addrinfo* hostInfo = NULL;
+	in_addr_t addr;
+	if(strncasecmp(hostname, "none", 4) == 0) {
+		addr = htonl(INADDR_NONE);
+	}else if(strncasecmp(hostname, "localhost", 9) == 0) {
+		addr = htonl(INADDR_LOOPBACK);
+	}else if(strncasecmp(hostname, "any", 9) == 0) {
+		addr = htonl(INADDR_ANY);
+	}else if (getaddrinfo(hostname, NULL, NULL, &hostInfo) >= 0) {
+		while (hostInfo->ai_next) hostInfo = hostInfo->ai_next;
+
+		addr = ((struct sockaddr_in *)(hostInfo->ai_addr))->sin_addr.s_addr;
+
+	} else{
+		return -1;
+	}
+	if (hostInfo)
+		freeaddrinfo(hostInfo);
+	return addr;
+}
 
 /* At the BEGINNING this is the proxy writer end, whose that 
    communicates with the real server (this would be a reader too then) */
@@ -136,16 +173,19 @@ static int _as_startAs(AS *h) {
 AS* as_new(int argc, char* argv[], ShadowLogFunc slogf) {
 	assert(slogf);
 
-	struct addrinfo* hostInfo = NULL;
-	in_addr_t inaddr = 0, outaddr = 0;
-	char *hostname_bind;
-	char *hostname_connect;
-	char *inport;
-	char *outport;
+	in_addr_t	inaddr = 0,
+			outaddr = 0,
+			traceaddr = 0;
+	char	*hostname_bind,
+		*hostname_connect,
+		*hostname_trace;
+
+	char	*inport,
+		*outport,
+		*traceport;
 	char *tmp;
 
-
-	if(argc != 3) {
+	if(argc < 4) {
 		slogf(SHADOW_LOG_LEVEL_WARNING, __FUNCTION__, USAGE);
 		return NULL;
 	}
@@ -157,6 +197,10 @@ AS* as_new(int argc, char* argv[], ShadowLogFunc slogf) {
 	asprintf(&tmp, "%s", argv[2]);
 	hostname_connect = strsep(&tmp, ":");
 	outport = tmp;
+
+	asprintf(&tmp, "%s", argv[3]);
+	hostname_trace = strsep(&tmp, ":");
+	traceport = tmp;
 
 	printf("\t%s %s %s %s\n", hostname_bind, inport , hostname_connect, outport);
 
@@ -176,50 +220,9 @@ AS* as_new(int argc, char* argv[], ShadowLogFunc slogf) {
 	}
 	/* DNS query */
 	/* get the address in network order */
-	if(strncasecmp(hostname_bind, "none", 4) == 0) {
-		inaddr = htonl(INADDR_NONE);
-	}else if(strncasecmp(hostname_bind, "localhost", 9) == 0) {
-		inaddr = htonl(INADDR_LOOPBACK);
-	}else if(strncasecmp(hostname_bind, "any", 9) == 0) {
-		inaddr = htonl(INADDR_ANY);
-	}else if (getaddrinfo(hostname_bind, NULL, NULL, &hostInfo) >= 0) {		
-		while (hostInfo->ai_next) hostInfo = hostInfo->ai_next;
-
-		inaddr = ((struct sockaddr_in *)(hostInfo->ai_addr))->sin_addr.s_addr;
-
-	} else{
-		slogf(SHADOW_LOG_LEVEL_CRITICAL, __FUNCTION__,
-				"Error in main getaddrinfo (%s)", strerror(errno));
-		close(inputEd);
-		return NULL;
-	}
-	memset(&hostInfo, 0, sizeof(hostInfo));	
-
-	char buf1[1024];
-	/* DNS query */
-	/* get the address in network order */
-	if(strncasecmp(hostname_connect, "none", 4) == 0) {
-		outaddr = htonl(INADDR_NONE);
-	}else if(strncasecmp(hostname_connect, "localhost", 9) == 0) {
-		outaddr = htonl(INADDR_LOOPBACK);
-	}else if(strncasecmp(hostname_connect, "any", 9) == 0) {
-		outaddr = htonl(INADDR_ANY);
-	}else if (getaddrinfo(hostname_connect, NULL, NULL, &hostInfo) >= 0) {
-		while (hostInfo->ai_next) hostInfo = hostInfo->ai_next;
-
-		outaddr = ((struct sockaddr_in *)(hostInfo->ai_addr))->sin_addr.s_addr;
-	} else{
-		slogf(SHADOW_LOG_LEVEL_CRITICAL, __FUNCTION__,
-				"Error in main getaddrinfo (%s)", strerror(errno));
-		close(inputEd);
-		return NULL;
-	}
-	perror("getaddrinfo: ");
-
-	slogf(SHADOW_LOG_LEVEL_MESSAGE, __FUNCTION__,
-			"%s inaddr (%s), %s outaddr (%s)", hostname_bind, inet_ntoa(*(struct in_addr *)&inaddr), hostname_connect, inet_ntop(AF_INET, &outaddr, buf1,100));
-
-
+	inaddr = dnsQuery(hostname_bind);
+	outaddr = dnsQuery(hostname_connect);
+	traceaddr = dnsQuery(hostname_trace);
 
 	/* get memory for the new state */
 	AS* h = calloc(1, sizeof(AS));
@@ -227,18 +230,20 @@ AS* as_new(int argc, char* argv[], ShadowLogFunc slogf) {
 
 	h->outport = htons(atoi(outport));
 	h->inport = htons(atoi(inport));
+	h->traceport = htons(atoi(traceport));
+
 	h->ined = inputEd;
 	h->slogf = slogf;
 	h->isDone = 0;
-	h->endread = 0;
-	h->good_data = 0;
+
 	h->hostIP = inaddr;
 	h->remoteIP = outaddr;
-	h->firstTime = 1;
-	h->hashmap = g_hash_table_new(g_int_hash, g_int_equal);
+	h->traceIP = traceaddr;
 
-	if (hostInfo)
-		freeaddrinfo(hostInfo);
+	h->hashmap = g_hash_table_new(g_int_hash, g_int_equal);
+	h->serverMode = 0;
+
+	prepareToTrace(argc, argv, h);
 
 	/* extract the server hostname from argv if in client mode */
 	int isFail = 0;
@@ -260,13 +265,42 @@ void as_free(AS* h) {
 
 	if(h->ined)
 		close(h->ined);
+	close(h->tracerSocket);
 
 	free(h);
 }
 
-/* Function to trace udp in tor */
-void udpTrace()
+char *buildTracePackage(AS *h)
 {
+	/* TODO: Funzione orripilante u.u
+	 * Da sistemare! Super quick and dirty */
+
+	char *out = malloc(512);
+	int len = 0;
+	struct timeval tv;
+
+	out[0] = (h->serverMode? 's':'c');
+	out[1] = ';';
+
+	/* XXX bug if hostname is > 256 chars */
+	gethostname(out + 2, 256);
+	len = strlen(out);
+
+	out[len] = ';';
+
+	gettimeofday(&tv, NULL);
+	sprintf(out+len+1, "%ld%ld\n", tv.tv_sec, tv.tv_usec);
+
+	return out;
+}
+
+/* Function to trace udp in tor */
+void udpTrace(AS *h)
+{
+	char *tracepck = buildTracePackage(h);
+	sendto(h->tracerSocket, tracepck, strlen(tracepck), 0,
+		(struct sockaddr *) &h->tracerSin, sizeof(struct sockaddr_in));
+	perror("sendto");
 	return;
 }
 
@@ -327,7 +361,7 @@ void handleNewConnection(AS *h, int sd)
 			"Reader: accepted connection %d (%s)", *cin,
 			strerror(errno));
 
-	udpTrace();
+	udpTrace(h);
 
 	cout = g_new0(gint, 1);
 	*cout = socket(AF_INET, SOCK_STREAM, 0);

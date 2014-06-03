@@ -18,6 +18,7 @@
 #include <linux/ip.h>
 #include <arpa/inet.h>
 #include <errno.h>
+#include <sys/time.h>
 
 #include <shd-library.h>
 
