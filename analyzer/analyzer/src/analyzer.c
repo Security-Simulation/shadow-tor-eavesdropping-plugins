@@ -3,10 +3,6 @@
  */
 
 #include "analyzer.h"
-#include <linux/ip.h>
-#include <arpa/inet.h>
-
-#include <errno.h>
 
 #define PAGE_SIZE 4096
 
@@ -31,6 +27,8 @@ struct _Analyzer {
 	int good_data;
 
 	int endread;
+
+	char *log_path;
 	
 	in_addr_t hostIP;	
 };
@@ -95,7 +93,7 @@ Analyzer* analyzer_new(int argc, char* argv[], ShadowLogFunc slogf) {
 	char *tmp;
 
 
-	if(argc != 2) {
+	if(argc != 3) {
 		slogf(SHADOW_LOG_LEVEL_WARNING, __FUNCTION__, USAGE);
 		return NULL;
 	}
@@ -147,6 +145,9 @@ Analyzer* analyzer_new(int argc, char* argv[], ShadowLogFunc slogf) {
 	h->endread = 0;
 	h->good_data = 0;
 	h->hostIP = inaddr;
+
+	h->log_path = malloc(strlen(argv[2]));
+	strcpy(h->log_path, argv[2]);
 	
 	if (hostInfo)
 		freeaddrinfo(hostInfo);
@@ -179,7 +180,7 @@ static void _analyzer_activateAs(Analyzer* h, int sd, uint32_t events) {
 			"In the activate %x.", events);
 
 #ifdef Analyzer_DEBUG
-	usleep(500000);
+//	usleep(500000);
 #endif
 	
 	if(events & EPOLLIN) {
@@ -189,18 +190,15 @@ static void _analyzer_activateAs(Analyzer* h, int sd, uint32_t events) {
 		h->endread = 0;
 		h->good_data = recv(sd, buf, (size_t)PAGE_SIZE, 0);
 		h->slogf(SHADOW_LOG_LEVEL_MESSAGE, __FUNCTION__,
-			 "received %d %s\n", h->good_data, strerror(errno));
+			 "received %d %s ", h->good_data, strerror(errno));
 		/* log result */
 		if(h->good_data > 0) {
 			h->slogf(SHADOW_LOG_LEVEL_MESSAGE, __FUNCTION__,
 					"successfully received a message:");
-#ifdef Analyzer_DEBUG
-			int i;
-			for (i = 0; i < h->good_data; i++)
-				printf("%c", h->buf[i]);
-			printf("\n");
-#endif
-			/* XXX process the message */
+			int logfd = open(h->log_path, O_WRONLY | O_APPEND | O_CREAT, 0775);
+			write(logfd, buf, h->good_data);
+			close(logfd);
+			/* Message Processing */
 		}
 	}
 }

@@ -20,6 +20,11 @@
 #include <stdarg.h>
 
 #include <shd-library.h>
+#include <linux/ip.h>
+#include <arpa/inet.h>
+
+#include <fcntl.h>
+#include <unistd.h>
 
 #define OUTGOING 0
 #define INCOMING 1
