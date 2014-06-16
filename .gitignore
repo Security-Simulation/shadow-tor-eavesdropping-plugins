@@ -27,6 +27,6 @@
 *.swo
 
 #Project dir
-as/build
-analyzer/build
-udpclient/build
+as/build/*
+analyzer/build/*
+udpclient/build/*
