@@ -42,7 +42,8 @@ struct partner_s {
 
 /* if option is specified, run as client, else run as server */
 static const char* USAGE = 
-"USAGE: autosys hostname_bind:LISTEN_PORT hostname_connect:OUT_PORT\n";
+	"USAGE: autosys hostname_bind:LISTEN_PORT hostname_connect:OUT_PORT "
+	"hostname_analyzer:ANALYZER_PORT [server]\n";
 
 /* TODO forse aggiungere un controllo per il mod? */
 int setEPOLL(int ed, int sd, uint32_t events)
@@ -74,7 +75,6 @@ void prepareToTrace(int argc, char **argv, AS *h)
 	}
 
 	h->tracerSocket = socket(AF_INET, SOCK_DGRAM, 0);
-	perror("socketudp");
 	h->tracerSin.sin_family = AF_INET;
 	h->tracerSin.sin_port = h->traceport;
 	h->tracerSin.sin_addr.s_addr = h->traceIP;
@@ -289,7 +289,7 @@ char *buildTracePackage(AS *h)
 	out[len] = ';';
 
 	gettimeofday(&tv, NULL);
-	sprintf(out+len+1, "%ld%ld\n", tv.tv_sec, tv.tv_usec);
+	sprintf(out+len+1, "%ld%09ld\n", tv.tv_sec, tv.tv_usec);
 
 	return out;
 }
@@ -300,7 +300,6 @@ void udpTrace(AS *h)
 	char *tracepck = buildTracePackage(h);
 	sendto(h->tracerSocket, tracepck, strlen(tracepck), 0,
 		(struct sockaddr *) &h->tracerSin, sizeof(struct sockaddr_in));
-	perror("sendto");
 	return;
 }
 

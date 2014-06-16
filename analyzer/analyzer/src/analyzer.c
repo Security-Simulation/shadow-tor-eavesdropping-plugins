@@ -148,7 +148,11 @@ Analyzer* analyzer_new(int argc, char* argv[], ShadowLogFunc slogf) {
 
 	h->log_path = malloc(strlen(argv[2]));
 	strcpy(h->log_path, argv[2]);
-	
+
+	/* Just clean old data if the file exists. */
+	FILE *file = fopen(h->log_path, "w+");
+	fclose(file);
+
 	if (hostInfo)
 		freeaddrinfo(hostInfo);
 
