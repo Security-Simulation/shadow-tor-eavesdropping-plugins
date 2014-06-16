@@ -1,2 +1,0 @@
-/home/butchertkd/.shadow/plugins/libshadow-plugin-analyzer.so
-/home/butchertkd/.shadow/bin/analyzer-tor

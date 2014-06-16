@@ -1,1 +1,0 @@
-/home/butchertkd/.local/bin/clang  -fPIC  -g -fno-inline -fno-strict-aliasing -U_FORTIFY_SOURCE   -shared -Wl,-soname,libshadow-plugin-udpclient.so -o libshadow-plugin-udpclient.so shadow-plugin-udpclient.hoisted.bc 
