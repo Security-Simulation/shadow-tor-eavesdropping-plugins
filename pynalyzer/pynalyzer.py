@@ -4,6 +4,7 @@
 CLIENT = 0
 SERVER = 1
 
+#TODO: convert this in a dictionary
 class Connection():
 	'''
 	A connection revealed by an autosys host. The side tells us if the 
@@ -14,24 +15,42 @@ class Connection():
 		self.hostname = hostname
 		self.timestamp = timestamp
 		if side == CLIENT:
-			self.servers = []
+			self.servers = {}
 
 class Analyzer():
 	'''
 	The core class. 
 	The analyzer does the whole dirty job.	
 	'''
-	def __init__(self, traceFilePath):
+	def __init__(self, traceFilePath, threshold):
 		self.traceFile = open(traceFilePath)
-		self.connections = []		
-	
+		self.connections = []
+		self.threshold = threshold
+
+	def __calcProb(self, time1, time2):
+		if time1 > time2:
+			raise Exception("time2 must be bigger than time1")
+
+		timeDistance = time2 - time1
+		prob = 0.0
+
+		if timeDistance <= self.threshold:		
+			prob = 1.0 - (float(timeDistance) / float(self.threshold))
+		
+		return prob 
+
 	def __analyzeForward(self, startConn):
 		cs = self.connections
-		for c in cs[cs.index(startConn)+1:]:
-			if c.side == SERVER:
-				#TODO: time distance
-				print (str(cs.index(c))+" analyzing:"
-					" "+startConn.hostname+" "+c.hostname)
+		for s in cs[cs.index(startConn)+1:]:
+			if s.side == SERVER: 
+				prob = self.__calcProb(startConn.timestamp, s.timestamp)
+				if prob == 0.0:
+					break #TODO: clean this with a while
+				
+				startConn.servers[s.hostname] = [prob, s.timestamp]
+
+		print (str(startConn.timestamp)+" "+startConn.hostname+" : "
+				+str(startConn.servers))
 
 	def parseData(self):
 		'''
@@ -65,12 +84,13 @@ class Analyzer():
 		for conn in self.connections:
 			if conn.side == CLIENT:
 				self.__analyzeForward(conn)
+			#TODO else: remove it
 
 if __name__ == '__main__':
 	traceFilePath = "/tmp/trace.log"
 	#microseconds threshold distance
-	threshold = 1000000000 
-	analyzer = Analyzer(traceFilePath)
+	threshold = 6000000000 
+	analyzer = Analyzer(traceFilePath, threshold)
 	analyzer.parseData()
 
 	for c in analyzer.connections:
