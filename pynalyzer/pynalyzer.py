@@ -4,98 +4,90 @@
 CLIENT = 0
 SERVER = 1
 
-#TODO: convert this in a dictionary
-class Connection():
-	'''
-	A connection revealed by an autosys host. The side tells us if the 
-	autosys plugin was attached in a client or in a server.
-	'''
-	def __init__(self, side, hostname, timestamp):
-		self.side = side
-		self.hostname = hostname
-		self.timestamp = timestamp
-		if side == CLIENT:
-			self.servers = {}
+#Global variables default values 
+THRESHOLD = 6000000000
+TRACE_FILE = "trace.log"
 
-class Analyzer():
+def calcProb(time1, time2):
 	'''
-	The core class. 
-	The analyzer does the whole dirty job.	
+	Calculate the probability that a client connection was related or not
+	to a certain server connection. The time2 parameter should be the server
+	connection timestamp and the time1 the client connection timestamp.
+	The probability is calculated in relation to the fixed THRESHOLD.
 	'''
-	def __init__(self, traceFilePath, threshold):
-		self.traceFile = open(traceFilePath)
-		self.connections = []
-		self.threshold = threshold
+	if time1 > time2:
+		raise Exception("time2 must be bigger than time1")
 
-	def __calcProb(self, time1, time2):
-		if time1 > time2:
-			raise Exception("time2 must be bigger than time1")
+	timeDistance = time2 - time1
+	prob = 0.0
 
-		timeDistance = time2 - time1
-		prob = 0.0
+	if timeDistance <= THRESHOLD:		
+		prob = 1.0 - (float(timeDistance) / float(THRESHOLD))
+	
+	return prob 
 
-		if timeDistance <= self.threshold:		
-			prob = 1.0 - (float(timeDistance) / float(self.threshold))
+def connectionParams(line):
+	'''
+	Retrieve the params parsing a line
+	'''
+	params = line.split(';')
+	
+	if params[0] == 'c':
+		side = CLIENT
+	else:
+		side = SERVER
+	
+	hostname = params[1]	
+	timestamp = int(params[2])
+
+	return {'side': side, 'hostname' : hostname, 'time' : timestamp}
+
+def analyzeForward(startConn, startIdx, data):
+	'''
+	Starting from a certain client connection, scan the data forward in time.
+	At each server connection line, calculate and store the probability of
+	how much the server connection is related to the start client connection.
+	'''
+	servers = {}
+	for j in data[startIdx:]:
+		servConn = connectionParams(j)
+		if servConn['side'] == SERVER:
+			prob = calcProb(startConn['time'], servConn['time'])
+			if prob == 0.0:
+				break #TODO: clean this with a while
 		
-		return prob 
+			if not servConn['hostname'] in servers:
+				servers[servConn['hostname']] = [prob, servConn['time']]
 
-	def __analyzeForward(self, startConn):
-		cs = self.connections
-		for s in cs[cs.index(startConn)+1:]:
-			if s.side == SERVER: 
-				prob = self.__calcProb(startConn.timestamp, s.timestamp)
-				if prob == 0.0:
-					break #TODO: clean this with a while
-				
-				startConn.servers[s.hostname] = [prob, s.timestamp]
+	return servers
 
-		print (str(startConn.timestamp)+" "+startConn.hostname+" : "
-				+str(startConn.servers))
-
-	def parseData(self):
-		'''
-		Parse the traced data. Each line has the following format:
-		serverside/clientside(c/s);hostname;timestamp(sss..ssmmmuuu)
-		Create a connection object per each parsed line
-		'''
-		for line in self.traceFile.readlines():
-			params = line.split(';')
-			
-			if params[0] == 'c':
-				side = CLIENT
-			else:
-				side = SERVER
-			
-			hostname = params[1]	
-			timestamp = int(params[2])
-			
-			c = Connection(side, hostname, timestamp)
-			self.connections.append(c)
-
-		self.traceFile.close()    
-
-	def analyzeConnections(self):
-		'''
-		For each client side connection, check and store the server 
-		candidates for that connection. Simply scan the connections 
-		list moving forward in time and save all the servers that 
-		received a connection in the next time slice of THRESHOLD size.
-		'''
-		for conn in self.connections:
-			if conn.side == CLIENT:
-				self.__analyzeForward(conn)
-			#TODO else: remove it
+def analyze(traceFilePath):
+	'''
+	Parse and analyze the traced data. 
+	Each line identifies an autosys connection and has the following format:
+	serverside/clientside(c/s);hostname;timestamp(sss..ssmmmuuu)
+	For each client side connection, check and store the server 
+	candidates for that connection, scanning the connections 
+	list moving forward in time (analyzeForward).
+	'''
+	connections = {} 
+	traceFile = open(traceFilePath)
+	data = traceFile.readlines()
+	traceFile.close()
+	for i in data:
+		startConn = connectionParams(i)			
+		
+		if startConn['side'] == CLIENT:	
+			connections[startConn['hostname']] = []
+			conn = {}
+			conn['time'] = startConn['time']
+			conn['servers'] = analyzeForward(startConn, 
+				data.index(i) + 1, data)
+			connections[startConn['hostname']].append(conn)
+	
+	return connections
 
 if __name__ == '__main__':
-	traceFilePath = "/tmp/trace.log"
-	#microseconds threshold distance
-	threshold = 6000000000 
-	analyzer = Analyzer(traceFilePath, threshold)
-	analyzer.parseData()
-
-	for c in analyzer.connections:
-		print c.side,c.hostname,c.timestamp
-
-	print "######"
-
-	analyzer.analyzeConnections()
+	traceFilePath = TRACE_FILE
+	connections = analyze(traceFilePath)
+	print connections
