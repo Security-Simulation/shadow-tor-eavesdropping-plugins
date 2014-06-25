@@ -26,6 +26,9 @@
 *.swp
 *.swo
 
+#log files
+*.log
+
 #Project dir
 as/build/*
 analyzer/build/*
