@@ -96,9 +96,9 @@ def analyze(traceFilePath):
 	traceFile.close()
 	for i in data:
 		startConn = connectionParams(i)			
-		
 		if startConn['side'] == CLIENT:	
-			connections[startConn['hostname']] = []
+			if not startConn['hostname'] in connections:
+				connections[startConn['hostname']] = []
 			conn = {}
 			conn['time'] = startConn['time']
 			conn['servers'] = analyzeForward(startConn, 
@@ -108,6 +108,11 @@ def analyze(traceFilePath):
 	return connections
 
 if __name__ == '__main__':
+	#TODO: 
+	# - input args, 
+	# - lower threshold, 
+	# - sort lines list (if the user asks for it)
+	# - print dictionary as the scallion scripts
 	traceFilePath = TRACE_FILE
 	connections = analyze(traceFilePath)
 	print connections
