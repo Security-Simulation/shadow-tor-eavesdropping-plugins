@@ -33,3 +33,4 @@
 as/build/*
 analyzer/build/*
 udpclient/build/*
+simpletcp/build/*
