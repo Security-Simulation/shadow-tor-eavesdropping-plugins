@@ -2,13 +2,13 @@
  * See LICENSE for licensing information
  */
 
-
-#define _GNU_SOURCE 
-#include <stdio.h>
-
 #include "simpletcp.h"
+
 #define SERVER 0
 #define CLIENT 1
+
+#define HOSTNAME_MAX_LEN 256
+#define CLIENT_MSG_SIZE HOSTNAME_MAX_LEN
 
 /* all state for simpletcp is stored here */
 struct _SimpleTCP {
@@ -23,6 +23,8 @@ struct _SimpleTCP {
 	/* track if our client got a response and we can exit */
 	int isDone;
 
+	char *hostname;
+
 	struct {
 		int sd;
 		int serverPort;
@@ -32,11 +34,13 @@ struct _SimpleTCP {
 	struct {
 		int sd;
 		int bindPort;
+		GHashTable *hashtab;
+		char *log_path;
 	} server;
 };
 
 /* if option is specified, run as client, else run as server */
-static const char* USAGE = "USAGE: simpletcp c|s hostname:PORT\n";
+static const char* USAGE = "USAGE: simpletcp c|s hostname:port log_folder\n";
 
 static int _simpletcp_startClient(SimpleTCP* h) {
 	int res;
@@ -160,10 +164,10 @@ SimpleTCP* simpletcp_new(int argc, char* argv[], ShadowLogFunc slogf) {
 	assert(slogf);
 
 	int side = SERVER;
-	char *hostname, *port, myhostname[1024];
+	char *hostname, *port, *myhostname;
 	char *tmp;
 
-	if (argc < 3 && argv[1][0] != 's' && argv[1][0] != 'c') {
+	if (argc < 3 || (argv[1][0] != 's' && argv[1][0] != 'c')) {
 		slogf(SHADOW_LOG_LEVEL_WARNING, __FUNCTION__, USAGE);
 		return NULL;
 	}
@@ -177,10 +181,23 @@ SimpleTCP* simpletcp_new(int argc, char* argv[], ShadowLogFunc slogf) {
 	
 	printf("\t%s %s\n", hostname, port);
 	
-	gethostname(myhostname, 1024);
+	myhostname = malloc(HOSTNAME_MAX_LEN);
+	
+	if (gethostname(myhostname, HOSTNAME_MAX_LEN) == -1){
+		if (errno == ENAMETOOLONG) {	
+			myhostname[HOSTNAME_MAX_LEN - 1] = 0;
+			slogf(SHADOW_LOG_LEVEL_WARNING, __FUNCTION__,
+				"hostname too long, truncated");
+		} else {
+			slogf(SHADOW_LOG_LEVEL_CRITICAL, __FUNCTION__,
+				"gethostname error");
+			return NULL;
+		}
+	}
+
 	slogf(SHADOW_LOG_LEVEL_MESSAGE, __FUNCTION__, 
 		"myhostname %s", myhostname);
-
+	
 	/* use epoll to asynchronously watch events for all of our sockets */
 	int mainEpollDescriptor = epoll_create(1);
 	if(mainEpollDescriptor == -1) {
@@ -194,7 +211,7 @@ SimpleTCP* simpletcp_new(int argc, char* argv[], ShadowLogFunc slogf) {
 	SimpleTCP* h = calloc(1, sizeof(SimpleTCP));
 	assert(h);
 
-
+	h->hostname = myhostname;
 	h->ed = mainEpollDescriptor;
 	h->slogf = slogf;
 	h->isDone = 0;
@@ -213,6 +230,24 @@ SimpleTCP* simpletcp_new(int argc, char* argv[], ShadowLogFunc slogf) {
 		isFail = _simpletcp_startClient(h);
 	} else {
 		/* server mode */
+		if (argc < 4){
+			slogf(SHADOW_LOG_LEVEL_WARNING, __FUNCTION__, USAGE);
+			return NULL;
+		}
+		
+		/* Prepare the log file */
+		asprintf(&(h->server.log_path), "%s/%s", argv[3], h->hostname);
+
+		/* Just clean old data if the file exists. */
+		FILE *file = fopen(h->server.log_path, "w+");
+		if (file == NULL){
+			slogf(SHADOW_LOG_LEVEL_WARNING, __FUNCTION__,
+				"Error in fopen: %s", strerror(errno));
+			return NULL;
+		}
+		fclose(file);
+		
+		h->server.hashtab = g_hash_table_new(g_int_hash, g_int_equal);	
 		h->server.bindPort = htons(atoi(port));
 		isFail = _simpletcp_startServer(h);
 	}
@@ -236,85 +271,198 @@ void simpletcp_free(SimpleTCP* h) {
 	free(h);
 }
 
-static void _simpletcp_activateClient(SimpleTCP* h, int sd, uint32_t events) {
+static void _simpletcp_logServerConnection(SimpleTCP * h, int sd, 
+						char *client_hostname)
+{
+	/* TODO:
+	   	- get the server hostname
+		- get the client hostname
+	   	- compose the string
+		- open the file
+		- write the log
+	*/
+	int lsd = sd;
+	char *logbuf, *server_hostname;
+	struct timeval *time = g_hash_table_lookup(h->server.hashtab, &lsd);
+	if (time == NULL){
+		h->slogf(SHADOW_LOG_LEVEL_DEBUG, __FUNCTION__,
+			"Null pointer in lookup of %d", sd);
+		_exit(EXIT_FAILURE);
+	}
+	
+	asprintf(&logbuf, "%s;%ld%09ld\n", h->hostname, 
+			time->tv_sec, time->tv_usec);
+
+	printf("%s", logbuf);
+
+	int logfd = open(h->server.log_path, O_WRONLY | O_APPEND | O_CREAT, 0775);
+	write(logfd, logbuf, strlen(logbuf));
+	close(logfd);
+}
+
+static void _simpletcp_clientRead(SimpleTCP *h, int sd)
+{
+	struct epoll_event ev;
 	ssize_t numBytes = 0;
 	char message[10];
+
+	/* prepare to accept the message */
+	memset(message, 0, (size_t)10);
+
+	numBytes = recv(sd, message, (size_t)6, 0);
+
+	/* log result */
+	if(numBytes > 0) {
+		h->slogf(SHADOW_LOG_LEVEL_MESSAGE, __FUNCTION__,
+				"successfully received '%s' message", message);
+	} else {
+		h->slogf(SHADOW_LOG_LEVEL_WARNING, __FUNCTION__,
+				"unable to receive message");
+	}
+
+	/* tell epoll we no longer want to watch this socket */
+	epoll_ctl(h->ed, EPOLL_CTL_DEL, sd, NULL);
+
+	close(sd);
+	h->client.sd = 0;
+	h->isDone = 1;
+}
+
+static void _simpletcp_clientWrite(SimpleTCP *h, int sd)
+{
+	struct epoll_event ev;
+	ssize_t numBytes = 0;
+	char message[CLIENT_MSG_SIZE];
+	
+	/* prepare the message */
+	memset(message, 0, (size_t)CLIENT_MSG_SIZE);
+	
+	strcpy(message, h->hostname);
+	
+	/* send the message */
+	numBytes = send(sd, message, (size_t)strlen(message), 0);
+
+	/* log result */
+	if(numBytes == strlen(message)) {
+		h->slogf(SHADOW_LOG_LEVEL_MESSAGE, __FUNCTION__,
+			"successfully sent '%s' message", message);
+	} else {
+		h->slogf(SHADOW_LOG_LEVEL_WARNING, __FUNCTION__,
+			"unable to send message");
+	}
+
+	/* tell epoll we don't care about writing anymore */
+	memset(&ev, 0, sizeof(struct epoll_event));
+	ev.events = EPOLLIN;
+	ev.data.fd = sd;
+	epoll_ctl(h->ed, EPOLL_CTL_MOD, sd, &ev);
+}
+
+static void _simpletcp_serverRead(SimpleTCP *h, int sd)
+{
+	struct epoll_event ev;
+	size_t numBytes = 0;
+	char message[10];
+	
+	/* prepare to accept the message */
+	memset(message, 0, (size_t)10);
+
+	numBytes = recv(sd, message, (size_t)6, 0);
+
+	/* log result */
+	if(numBytes > 0) {
+		h->slogf(SHADOW_LOG_LEVEL_MESSAGE, __FUNCTION__, 
+			"successfully received '%s' message", 
+			message);
+
+		_simpletcp_logServerConnection(h, sd, message);
+
+	} else if(numBytes == 0){
+		/* client got response and closed */
+		/* tell epoll we no longer want to watch this socket */
+		epoll_ctl(h->ed, EPOLL_CTL_DEL, sd, NULL);
+		close(sd);
+		g_hash_table_remove(h->server.hashtab, &sd);
+	} else {
+		h->slogf(SHADOW_LOG_LEVEL_WARNING, __FUNCTION__,
+			"unable to receive message");
+	}
+
+	/* tell epoll we want to write the response now */
+	memset(&ev, 0, sizeof(struct epoll_event));
+	ev.events = EPOLLOUT;
+	ev.data.fd = sd;
+	epoll_ctl(h->ed, EPOLL_CTL_MOD, sd, &ev);
+}
+
+static void _simpletcp_serverWrite(SimpleTCP *h, int sd)
+{
+	struct epoll_event ev;
+	size_t numBytes = 0;
+	char message[10];
+	
+	/* prepare the response message */
+	memset(message, 0, (size_t)10);
+	snprintf(message, 10, "%s", "World!");
+
+	/* send the message */
+	numBytes = send(sd, message, (size_t)6, 0);
+
+	/* log result */
+	if(numBytes == 6) {
+		h->slogf(SHADOW_LOG_LEVEL_MESSAGE, __FUNCTION__,
+				"successfully sent '%s' message", message);
+	} else {
+		h->slogf(SHADOW_LOG_LEVEL_WARNING, __FUNCTION__,
+				"unable to send message");
+	}
+
+	/* now wait until we read 0 for client close event */
+	memset(&ev, 0, sizeof(struct epoll_event));
+	ev.events = EPOLLIN;
+	ev.data.fd = sd;
+	epoll_ctl(h->ed, EPOLL_CTL_MOD, sd, &ev);
+}
+
+static void _simpletcp_activateClient(SimpleTCP* h, int sd, uint32_t events) {
 	assert(h->client.sd == sd);
 
 	if(events & EPOLLOUT) {
-		h->slogf(SHADOW_LOG_LEVEL_DEBUG, __FUNCTION__, "EPOLLOUT is set");
+		h->slogf(SHADOW_LOG_LEVEL_DEBUG, __FUNCTION__, 
+			"EPOLLOUT is set");
 	}
 	if(events & EPOLLIN) {
-		h->slogf(SHADOW_LOG_LEVEL_DEBUG, __FUNCTION__, "EPOLLIN is set");
+		h->slogf(SHADOW_LOG_LEVEL_DEBUG, __FUNCTION__, 
+			"EPOLLIN is set");
 	}
 
 	/* to keep things simple, there is explicitly no resilience here.
-	 * we allow only one chance to send the message and one to receive the response.
+	 * we allow only one chance to send the message 
+	 * and one to receive the response.
 	 */
 	if(events & EPOLLOUT) {
 		/* the kernel can accept data from us,
-		 * and we care because we registered EPOLLOUT on sd with epoll */
-
-		/* prepare the message */
-		memset(message, 0, (size_t)10);
-		snprintf(message, 10, "%s", "Hello?");
-
-		/* send the message */
-		numBytes = send(sd, message, (size_t)6, 0);
-
-		/* log result */
-		if(numBytes == 6) {
-			h->slogf(SHADOW_LOG_LEVEL_MESSAGE, __FUNCTION__,
-					"successfully sent '%s' message", message);
-		} else {
-			h->slogf(SHADOW_LOG_LEVEL_WARNING, __FUNCTION__,
-					"unable to send message");
-		}
-
-		/* tell epoll we don't care about writing anymore */
-		struct epoll_event ev;
-		memset(&ev, 0, sizeof(struct epoll_event));
-		ev.events = EPOLLIN;
-		ev.data.fd = sd;
-		epoll_ctl(h->ed, EPOLL_CTL_MOD, sd, &ev);
+		 * and we care because we registered EPOLLOUT on sd with epoll
+		 */
+		_simpletcp_clientWrite(h, sd);
 	} else if(events & EPOLLIN) {
 		/* there is data available to read from the kernel,
-		 * and we care because we registered EPOLLIN on sd with epoll */
-
-		/* prepare to accept the message */
-		memset(message, 0, (size_t)10);
-
-		numBytes = recv(sd, message, (size_t)6, 0);
-
-		/* log result */
-		if(numBytes > 0) {
-			h->slogf(SHADOW_LOG_LEVEL_MESSAGE, __FUNCTION__,
-					"successfully received '%s' message", message);
-		} else {
-			h->slogf(SHADOW_LOG_LEVEL_WARNING, __FUNCTION__,
-					"unable to receive message");
-		}
-
-		/* tell epoll we no longer want to watch this socket */
-		epoll_ctl(h->ed, EPOLL_CTL_DEL, sd, NULL);
-
-		close(sd);
-		h->client.sd = 0;
-		h->isDone = 1;
+		 * and we care because we registered EPOLLIN on sd with epoll 
+		 */
+		_simpletcp_clientRead(h, sd);
 	}
 }
 
-static void _simpletcp_activateServer(SimpleTCP* h, int sd, uint32_t events) {
-	ssize_t numBytes = 0;
-	char message[10];
+static void _simpletcp_activateServer(SimpleTCP* h, int sd, uint32_t events) 
+{
 	struct epoll_event ev;
-
-	if(events & EPOLLOUT) {
-		h->slogf(SHADOW_LOG_LEVEL_DEBUG, __FUNCTION__, "EPOLLOUT is set");
-	}
-	if(events & EPOLLIN) {
-		h->slogf(SHADOW_LOG_LEVEL_DEBUG, __FUNCTION__, "EPOLLIN is set");
-	}
+	
+	if(events & EPOLLOUT)
+		h->slogf(SHADOW_LOG_LEVEL_DEBUG, __FUNCTION__, 
+			"EPOLLOUT is set");
+	if(events & EPOLLIN) 
+		h->slogf(SHADOW_LOG_LEVEL_DEBUG, __FUNCTION__, 
+			"EPOLLIN is set");
 
 	if(sd == h->server.sd) {
 		/* data on a listening socket means a new client connection */
@@ -322,65 +470,34 @@ static void _simpletcp_activateServer(SimpleTCP* h, int sd, uint32_t events) {
 
 		/* accept new connection from a remote client */
 		int newClientSD = accept(sd, NULL, NULL);
+		gint *sd_key;
+		struct timeval *conn_time;
+
 		h->slogf(SHADOW_LOG_LEVEL_DEBUG, __FUNCTION__, 
 			"ACCEPT: %s", strerror(errno));
-
+		
+		/* We have to store the connection time.
+		 * We do this using a hashtable. */
+		sd_key = g_new0(gint, 1);
+		conn_time = g_new0(struct timeval, 1);
+		
+		*sd_key = newClientSD;
+		gettimeofday(conn_time, NULL);
+		
+		g_hash_table_replace(h->server.hashtab, sd_key, conn_time);
+		
 		/* now register this new socket so we know when its ready */
 		memset(&ev, 0, sizeof(struct epoll_event));
 		ev.events = EPOLLIN;
 		ev.data.fd = newClientSD;
 		epoll_ctl(h->ed, EPOLL_CTL_ADD, newClientSD, &ev);
 	} else {
-		/* a client is communicating with us over an existing connection */
-		if(events & EPOLLIN) {
-			/* prepare to accept the message */
-			memset(message, 0, (size_t)10);
-
-			numBytes = recv(sd, message, (size_t)6, 0);
-
-			/* log result */
-			if(numBytes > 0) {
-				h->slogf(SHADOW_LOG_LEVEL_MESSAGE, __FUNCTION__, 
-					"successfully received '%s' message", 
-					message);
-			} else if(numBytes == 0){
-				/* client got response and closed */
-				/* tell epoll we no longer want to watch this socket */
-				epoll_ctl(h->ed, EPOLL_CTL_DEL, sd, NULL);
-				close(sd);
-			} else {
-				h->slogf(SHADOW_LOG_LEVEL_WARNING, __FUNCTION__,
-					"unable to receive message");
-			}
-
-			/* tell epoll we want to write the response now */
-			memset(&ev, 0, sizeof(struct epoll_event));
-			ev.events = EPOLLOUT;
-			ev.data.fd = sd;
-			epoll_ctl(h->ed, EPOLL_CTL_MOD, sd, &ev);
-		} else if(events & EPOLLOUT) {
-			/* prepare the response message */
-			memset(message, 0, (size_t)10);
-			snprintf(message, 10, "%s", "World!");
-
-			/* send the message */
-			numBytes = send(sd, message, (size_t)6, 0);
-
-			/* log result */
-			if(numBytes == 6) {
-				h->slogf(SHADOW_LOG_LEVEL_MESSAGE, __FUNCTION__,
-						"successfully sent '%s' message", message);
-			} else {
-				h->slogf(SHADOW_LOG_LEVEL_WARNING, __FUNCTION__,
-						"unable to send message");
-			}
-
-			/* now wait until we read 0 for client close event */
-			memset(&ev, 0, sizeof(struct epoll_event));
-			ev.events = EPOLLIN;
-			ev.data.fd = sd;
-			epoll_ctl(h->ed, EPOLL_CTL_MOD, sd, &ev);
-		}
+		/* a client is communicating with us over an 
+		   existing connection */
+		if (events & EPOLLIN)
+			_simpletcp_serverRead(h, sd);
+		else if (events & EPOLLOUT) 
+			_simpletcp_serverWrite(h, sd);
 	}
 }
 
