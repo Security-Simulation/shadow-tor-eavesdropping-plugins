@@ -9,44 +9,13 @@
 
 #define HOSTNAME_MAX_LEN 256
 #define CLIENT_MSG_SIZE HOSTNAME_MAX_LEN
-
-/* all state for simpletcp is stored here */
-struct _SimpleTCP {
-	/* the function we use to log messages
-	 * needs level, functionname, and format */
-	ShadowLogFunc slogf;
-
-	/* the epoll descriptor to which we will add our sockets.
-	 * we use this descriptor with epoll to watch events on our sockets. */
-	int ed;
-
-	/* track if our client got a response and we can exit */
-	int isDone;
-
-	char *hostname;
-
-	struct {
-		int sd;
-		int serverPort;
-		in_addr_t serverIP;
-	} client;
-
-	struct {
-		int sd;
-		int bindPort;
-		GHashTable *hashtab;
-		char *log_path;
-	} server;
-};
-
-/* if option is specified, run as client, else run as server */
-static const char* USAGE = "USAGE: simpletcp c|s hostname:port log_folder\n";
+#define DEFAULT_SLEEP_CONN_TIME 1000 //ms = 1s
 
 static int _simpletcp_startClient(SimpleTCP* h) {
 	int res;
 
 	/* create the client socket and get a socket descriptor */
-	h->client.sd = socket(AF_INET, (SOCK_STREAM | SOCK_NONBLOCK), 0);
+	h->client.sd = socket(AF_INET, SOCK_STREAM , 0);
 	if(h->client.sd == -1) {
 		h->slogf(SHADOW_LOG_LEVEL_CRITICAL, __FUNCTION__,
 				"unable to start client: error in socket");
@@ -58,7 +27,7 @@ static int _simpletcp_startClient(SimpleTCP* h) {
 	memset(&addr, 0, sizeof(addr));
 	addr.sin_family = AF_INET;
 	addr.sin_addr.s_addr = h->client.serverIP;
-	addr.sin_port = htons(h->client.serverPort);
+	addr.sin_port = h->client.serverPort;
 
 	/* connect to server. since we are non-blocking, we expect this to 
 	   return EINPROGRESS */
@@ -88,8 +57,10 @@ static int _simpletcp_startClient(SimpleTCP* h) {
 }
 
 static int _simpletcp_startServer(SimpleTCP* h) {
-	/* create the socket and get a socket descriptor */
-	h->server.sd = socket(AF_INET, (SOCK_STREAM | SOCK_NONBLOCK), 0);
+	/* create the socket and get a socket descriptor 
+	 * XXX: removed SOCK_NONBLOCK to let it work outside of shadow too
+	 */
+	h->server.sd = socket(AF_INET, SOCK_STREAM, 0);
 	if (h->server.sd == -1) {
 		h->slogf(SHADOW_LOG_LEVEL_CRITICAL, __FUNCTION__,
 				"unable to start server: error in socket");
@@ -101,7 +72,7 @@ static int _simpletcp_startServer(SimpleTCP* h) {
 	memset(&addr, 0, sizeof(addr));
 	addr.sin_family = AF_INET;
 	addr.sin_addr.s_addr = INADDR_ANY;
-	addr.sin_port = htons(h->server.bindPort);
+	addr.sin_port = h->server.bindPort;
 
 	/* bind the socket to the server port */
 	int res = bind(h->server.sd, (struct sockaddr *)&addr, sizeof(addr));
@@ -160,26 +131,99 @@ in_addr_t dnsQuery(char *hostname)
 	return addr;
 }
 
-SimpleTCP* simpletcp_new(int argc, char* argv[], ShadowLogFunc slogf) {
-	assert(slogf);
+static void _simpletcp_wakeupCallback(void *data)
+{
+	printf("wakeup charlieee");
+	/*SimpleTCP *h;
+	h = (SimpleTCP *)data;
+	h->slogf(SHADOW_LOG_LEVEL_WARNING, __FUNCTION__, "wake uuup!!");*/
+}
 
-	int side = SERVER;
-	char *hostname, *port, *myhostname;
-	char *tmp;
+static void _simpletcp_sleepCallback(SimpleTCP *h, unsigned int millisecs)
+{
+	h->shadowlib->createCallback(&_simpletcp_wakeupCallback, 
+			(void *)h, millisecs);
+}
 
-	if (argc < 3 || (argv[1][0] != 's' && argv[1][0] != 'c')) {
-		slogf(SHADOW_LOG_LEVEL_WARNING, __FUNCTION__, USAGE);
-		return NULL;
+/* if option is specified, run as client, else run as server */
+static const char* USAGE = "Usage:" 
+	"\tsimpletcp client hostname:port n_conn [sleep_min-sleep_max](ms)\n"
+	"\tsimpletcp server hostname:port log_folder\n";
+
+#define _simpletcp_exitUsage(slofg) { \
+	slogf(SHADOW_LOG_LEVEL_WARNING, __FUNCTION__, USAGE); \
+	return NULL; }
+
+
+static int _simpletcp_checkClientArgs(int argc, char **argv, int *retargs)
+{
+	int nconn, sleep_min, sleep_max;
+	char *tmp, *tmp_end;
+
+	nconn = sleep_min = sleep_max = 0;
+
+	if (argc < 4)
+		return -1;
+
+	nconn = (int)strtol(argv[3], &tmp_end, 10);
+	if (errno != 0 || nconn > INT_MAX || *tmp_end != '\0')
+		return -1;
+	
+	if (argc >= 5){
+		asprintf(&tmp, "%s", argv[4]);
+
+		sleep_min = (int)strtol(strsep(&tmp, "-"), &tmp_end, 10);
+		if (errno != 0 || sleep_min > INT_MAX || *tmp_end != '\0')
+			return -1;
+		
+		sleep_max = (int)strtol(tmp, &tmp_end, 10);
+		if (errno != 0 || sleep_max > INT_MAX || *tmp_end != '\0')
+			return -1;
 	}
 
-	if (argv[1][0] == 'c') //TODO: I know, this is very ugly 
-		side  = CLIENT;
+	retargs[0] = nconn;
+	retargs[1] = sleep_min;
+	retargs[2] = sleep_max;
+
+	return 0;
+}
+
+SimpleTCP* simpletcp_new(int argc, char* argv[], 
+			ShadowFunctionTable *shadowlib, ShadowLogFunc slogf) 
+{
+	assert(slogf);
+
+	int mode, res;
+	int cliargs[3];
+	char *hostname, *port, *myhostname, *log_path;
+	char *mode_str = argv[1];
+	char *tmp;
+
+	if (argc < 3)
+		_simpletcp_exitUsage(slogf);
+			
+	if (strncmp(mode_str, "client", 6) == 0) {
+		mode = CLIENT;
+		res = _simpletcp_checkClientArgs(argc, argv, cliargs);
+		if (res == -1)
+			_simpletcp_exitUsage(slogf);
+		
+		slogf(SHADOW_LOG_LEVEL_DEBUG,__FUNCTION__, 
+			"nconn: %d, sleep_min: %d, sleep_max: %d", 
+			cliargs[0], cliargs[1], cliargs[2]);
+
+	} else if (strncmp(mode_str, "server", 6) == 0) {
+		mode = SERVER;
+		if (argc < 4)
+			_simpletcp_exitUsage(slogf);
+		asprintf(&log_path, "%s", argv[3]);
+	} else {
+		_simpletcp_exitUsage(slogf);
+	}
 
 	asprintf(&tmp, "%s", argv[2]);
 	hostname = strsep(&tmp, ":");
 	port = tmp;
-	
-	printf("\t%s %s\n", hostname, port);
 	
 	myhostname = malloc(HOSTNAME_MAX_LEN);
 	
@@ -206,21 +250,26 @@ SimpleTCP* simpletcp_new(int argc, char* argv[], ShadowLogFunc slogf) {
 		close(mainEpollDescriptor);
 		return NULL;
 	}
-
+	
 	/* get memory for the new state */
 	SimpleTCP* h = calloc(1, sizeof(SimpleTCP));
 	assert(h);
-
+	
 	h->hostname = myhostname;
 	h->ed = mainEpollDescriptor;
 	h->slogf = slogf;
+	h->shadowlib = shadowlib;
 	h->isDone = 0;
 
 	/* extract the server hostname from argv if in client mode */
 	int isFail = 0;
-	if (side == CLIENT) {
+	if (mode == CLIENT) {
 		/* client mode */
 		h->client.serverIP = dnsQuery(hostname);
+		h->client.nconn = cliargs[0];
+		h->client.sleep_min = cliargs[1];
+		h->client.sleep_max = cliargs[2];
+
 		if (h->client.serverIP == -1) {		
 			slogf(SHADOW_LOG_LEVEL_CRITICAL, __FUNCTION__,
 				"Error in dnsQuery");
@@ -230,13 +279,9 @@ SimpleTCP* simpletcp_new(int argc, char* argv[], ShadowLogFunc slogf) {
 		isFail = _simpletcp_startClient(h);
 	} else {
 		/* server mode */
-		if (argc < 4){
-			slogf(SHADOW_LOG_LEVEL_WARNING, __FUNCTION__, USAGE);
-			return NULL;
-		}
 		
 		/* Prepare the log file */
-		asprintf(&(h->server.log_path), "%s/%s", argv[3], h->hostname);
+		asprintf(&(h->server.log_path), "%s/%s", log_path, h->hostname);
 
 		/* Just clean old data if the file exists. */
 		FILE *file = fopen(h->server.log_path, "w+");
@@ -271,21 +316,16 @@ void simpletcp_free(SimpleTCP* h) {
 	free(h);
 }
 
+/* It prints the client hostname and the connection time into 
+ * a log file that has the server hostname as filename. */
 static void _simpletcp_logServerConnection(SimpleTCP * h, int sd, 
 						char *client_hostname)
 {
-	/* TODO:
-	   	- get the server hostname
-		- get the client hostname
-	   	- compose the string
-		- open the file
-		- write the log
-	*/
 	int lsd = sd;
 	char *logbuf, *server_hostname;
 	struct timeval *time = g_hash_table_lookup(h->server.hashtab, &lsd);
 	if (time == NULL){
-		h->slogf(SHADOW_LOG_LEVEL_DEBUG, __FUNCTION__,
+		h->slogf(SHADOW_LOG_LEVEL_CRITICAL, __FUNCTION__,
 			"Null pointer in lookup of %d", sd);
 		_exit(EXIT_FAILURE);
 	}
@@ -293,9 +333,13 @@ static void _simpletcp_logServerConnection(SimpleTCP * h, int sd,
 	asprintf(&logbuf, "%s;%ld%09ld\n", h->hostname, 
 			time->tv_sec, time->tv_usec);
 
-	printf("%s", logbuf);
-
-	int logfd = open(h->server.log_path, O_WRONLY | O_APPEND | O_CREAT, 0775);
+	int logfd = open(h->server.log_path, 
+			O_WRONLY | O_APPEND | O_CREAT, 0775);
+	if (logfd == -1){
+		h->slogf(SHADOW_LOG_LEVEL_CRITICAL, __FUNCTION__,
+			"Error in open %s", strerror(errno));
+		_exit(EXIT_FAILURE);
+	}
 	write(logfd, logbuf, strlen(logbuf));
 	close(logfd);
 }
@@ -325,7 +369,8 @@ static void _simpletcp_clientRead(SimpleTCP *h, int sd)
 
 	close(sd);
 	h->client.sd = 0;
-	h->isDone = 1;
+	//h->isDone = 1;
+	_simpletcp_sleepCallback(h, DEFAULT_SLEEP_CONN_TIME);
 }
 
 static void _simpletcp_clientWrite(SimpleTCP *h, int sd)
@@ -362,12 +407,12 @@ static void _simpletcp_serverRead(SimpleTCP *h, int sd)
 {
 	struct epoll_event ev;
 	size_t numBytes = 0;
-	char message[10];
+	char message[CLIENT_MSG_SIZE];
 	
 	/* prepare to accept the message */
-	memset(message, 0, (size_t)10);
+	memset(message, 0, (size_t)CLIENT_MSG_SIZE);
 
-	numBytes = recv(sd, message, (size_t)6, 0);
+	numBytes = recv(sd, message, (size_t)CLIENT_MSG_SIZE, 0);
 
 	/* log result */
 	if(numBytes > 0) {

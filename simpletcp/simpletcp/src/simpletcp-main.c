@@ -21,7 +21,8 @@ int main(int argc, char *argv[]) {
 	mylog("Starting SimpleTCP program");
 
 	/* create the new state according to user inputs */
-	SimpleTCP* simpletcpState = simpletcp_new(argc, argv, &_mylog);
+	//TODO: pass the shadowlib in some way
+	SimpleTCP* simpletcpState = simpletcp_new(argc, argv, NULL, &_mylog);
 	if(!simpletcpState) {
 		mylog("Error initializing new SimpleTCP instance");
 		return -1;
