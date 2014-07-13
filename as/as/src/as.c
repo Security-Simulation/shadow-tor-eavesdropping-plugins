@@ -289,7 +289,7 @@ char *buildTracePackage(AS *h)
 	out[len] = ';';
 
 	gettimeofday(&tv, NULL);
-	sprintf(out+len+1, "%ld%09ld\n", tv.tv_sec, tv.tv_usec);
+	sprintf(out+len+1, "%ld%06ld\n", tv.tv_sec, tv.tv_usec);
 
 	return out;
 }
