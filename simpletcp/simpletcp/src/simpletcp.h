@@ -31,11 +31,8 @@ typedef struct _SimpleTCP SimpleTCP;
 
 /* all state for simpletcp is stored here */
 struct _SimpleTCP {
-	/* the function we use to log messages
-	 * needs level, functionname, and format */
-	ShadowLogFunc slogf;
-	
-	ShadowFunctionTable *shadowlib;
+	/* The shadow libraries, it points to all the available functions */
+	ShadowFunctionTable *shdlib;
 
 	/* the epoll descriptor to which we will add our sockets.
 	 * we use this descriptor with epoll to watch events on our sockets. */
@@ -63,8 +60,7 @@ struct _SimpleTCP {
 	} server;
 };
 
-SimpleTCP* simpletcp_new(int argc, char* argv[], 
-					ShadowFunctionTable *shadowlib, ShadowLogFunc slogf);
+SimpleTCP* simpletcp_new(int argc, char* argv[], ShadowFunctionTable *shdlib);
 void simpletcp_free(SimpleTCP* h);
 void simpletcp_ready(SimpleTCP* h);
 int simpletcp_getEpollDescriptor(SimpleTCP* h);

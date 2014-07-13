@@ -22,8 +22,7 @@ static void simpletcpplugin_new(int argc, char* argv[]) {
 	 * we did not set it in __shadow_plugin_init__(). this is desirable, because
 	 * each node needs its own application state.
 	 */
-	simpletcpNodeInstance = simpletcp_new(argc, argv, &shadowlib, 
-			shadowlib.log);
+	simpletcpNodeInstance = simpletcp_new(argc, argv, &shadowlib);
 }
 
 /* shadow is freeing an existing instance of this plug-in that we previously
