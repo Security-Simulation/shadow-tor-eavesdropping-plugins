@@ -45,11 +45,14 @@ struct _SimpleTCP {
 
 	struct {
 		int sd;
-		int serverPort;
 		int nconn;
 		int sleep_min;
 		int sleep_max;
+		int serverPort;
+		int proxyPort;	
+		int socks5_status;
 		in_addr_t serverIP;
+		in_addr_t proxyIP;
 	} client;
 
 	struct {

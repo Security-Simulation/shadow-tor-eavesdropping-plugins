@@ -11,6 +11,15 @@
 #define CLIENT_MSG_SIZE HOSTNAME_MAX_LEN
 #define DEFAULT_SLEEP_CONN_TIME 1000 //ms = 1s
 
+#define SOCKS5_INIT 7
+#define SOCKS5_METHOD_NEGOTATION_REQ 6
+#define SOCKS5_METHOD_NEGOTATION_OK  5
+#define SOCKS5_METHOD_NEGOTATION_FAIL 4
+#define SOCKS5_CONNECTION_REQ 3
+#define SOCKS5_CONNECTION_FAIL 2
+#define SOCKS5_CONNECTION_OK 1
+#define SOCKS5_DONE 0
+
 static int _simpletcp_startClient(SimpleTCP* h) {
 	int res;
 
@@ -26,8 +35,8 @@ static int _simpletcp_startClient(SimpleTCP* h) {
 	struct sockaddr_in addr;
 	memset(&addr, 0, sizeof(addr));
 	addr.sin_family = AF_INET;
-	addr.sin_addr.s_addr = h->client.serverIP;
-	addr.sin_port = h->client.serverPort;
+	addr.sin_addr.s_addr = h->client.proxyIP;
+	addr.sin_port = h->client.proxyPort;
 
 	/* connect to server. since we are non-blocking, we expect this to 
 	   return EINPROGRESS */
@@ -108,7 +117,7 @@ static int _simpletcp_startServer(SimpleTCP* h) {
 	return 0;
 }
 
-in_addr_t dnsQuery(char *hostname)
+in_addr_t _simpletcp_dnsQuery(char *hostname)
 {
 	struct addrinfo* hostInfo = NULL;
 	in_addr_t addr;
@@ -150,8 +159,9 @@ static void _simpletcp_sleepCallback(SimpleTCP *h, unsigned int millisecs)
 
 /* if option is specified, run as client, else run as server */
 static const char* USAGE = "Usage:" 
-	"\tsimpletcp client hostname:port n_conn [sleep_min,sleep_max](ms)\n"
-	"\tsimpletcp server hostname:port log_folder\n";
+	"\tsimpletcp client proxyHostname:proxyPort serverHostname:serverPort "
+	"nConn [sleep_min,sleep_max](ms)\n"
+	"\tsimpletcp server bindHostname:bindPort logFolder\n";
 
 #define _simpletcp_exitUsage(slofg) { \
 	shdlib->log(SHADOW_LOG_LEVEL_WARNING, __FUNCTION__, USAGE); \
@@ -165,15 +175,17 @@ static int _simpletcp_checkClientArgs(int argc, char **argv, int *retargs)
 
 	nconn = sleep_min = sleep_max = 0;
 
-	if (argc < 4)
-		return -1;
-
-	nconn = (int)strtol(argv[3], &tmp_end, 10);
-	if (errno != 0 || nconn > INT_MAX || *tmp_end != '\0')
+	if (argc < 5){
 		return -1;
 	
-	if (argc >= 5){
-		asprintf(&split2, "%s", argv[4]);
+	}
+	nconn = (int)strtol(argv[4], &tmp_end, 10);
+	if (errno != 0 || nconn > INT_MAX || *tmp_end != '\0'){
+		return -1;
+	}
+	
+	if (argc > 5){
+		asprintf(&split2, "%s", argv[5]);
 
 		split1 = strsep(&split2, ",");
 		if (split1 == NULL || split2 == NULL)
@@ -186,7 +198,7 @@ static int _simpletcp_checkClientArgs(int argc, char **argv, int *retargs)
 		sleep_max = (int)strtol(split2, &tmp_end, 10);
 		if (errno != 0 || sleep_max > INT_MAX || *tmp_end != '\0')
 			return -1;
-	
+		
 		/* negative numbers obviously not allowed */
 		if (sleep_min < 0 || sleep_max < 0)
 			return -1;
@@ -205,7 +217,8 @@ SimpleTCP* simpletcp_new(int argc, char* argv[], ShadowFunctionTable *shdlib)
 
 	int mode, res;
 	int cliargs[3];
-	char *hostname, *port, *myhostname, *log_path;
+	char *hostname, *proxy_hostname, *port, *proxy_port;
+	char *myhostname, *log_path;
 	char *mode_str = argv[1];
 	char *tmp;
 
@@ -221,6 +234,14 @@ SimpleTCP* simpletcp_new(int argc, char* argv[], ShadowFunctionTable *shdlib)
 		if (res == -1)
 			_simpletcp_exitUsage(shdlib->log);
 		
+		asprintf(&tmp, "%s", argv[2]);
+		proxy_hostname = strsep(&tmp, ":");
+		proxy_port = tmp;
+
+		asprintf(&tmp, "%s", argv[3]);
+		hostname = strsep(&tmp, ":");
+		port = tmp;
+		
 		shdlib->log(SHADOW_LOG_LEVEL_DEBUG,__FUNCTION__, 
 			"nconn: %d, sleep_min: %d, sleep_max: %d", 
 			cliargs[0], cliargs[1], cliargs[2]);
@@ -229,14 +250,16 @@ SimpleTCP* simpletcp_new(int argc, char* argv[], ShadowFunctionTable *shdlib)
 		mode = SERVER;
 		if (argc < 4)
 			_simpletcp_exitUsage(shdlib->log);
+		
+		asprintf(&tmp, "%s", argv[2]);
+		hostname = strsep(&tmp, ":");
+		port = tmp;
+		
 		asprintf(&log_path, "%s", argv[3]);
 	} else {
 		_simpletcp_exitUsage(shdlib->log);
 	}
 
-	asprintf(&tmp, "%s", argv[2]);
-	hostname = strsep(&tmp, ":");
-	port = tmp;
 	
 	myhostname = malloc(HOSTNAME_MAX_LEN);
 	
@@ -277,17 +300,20 @@ SimpleTCP* simpletcp_new(int argc, char* argv[], ShadowFunctionTable *shdlib)
 	int isFail = 0;
 	if (mode == CLIENT) {
 		/* client mode */
-		h->client.serverIP = dnsQuery(hostname);
+		h->client.serverIP = _simpletcp_dnsQuery(hostname);
+		h->client.serverPort = htons(atoi(port));
+		h->client.proxyIP = _simpletcp_dnsQuery(proxy_hostname);
+		h->client.proxyPort = htons(atoi(proxy_port));
 		h->client.nconn = cliargs[0];
 		h->client.sleep_min = cliargs[1];
 		h->client.sleep_max = cliargs[2];
-
-		if (h->client.serverIP == -1) {		
+		h->client.socks5_status = SOCKS5_INIT;
+		
+		if (h->client.serverIP == -1 || h->client.proxyIP == -1) {
 			shdlib->log(SHADOW_LOG_LEVEL_CRITICAL, __FUNCTION__,
-				"Error in dnsQuery");
+				"Error in _simpletcp_dnsQuery");
 			return NULL;
 		}
-		h->client.serverPort = htons(atoi(port));
 		isFail = _simpletcp_startClient(h);
 	} else {
 		/* server mode */
@@ -356,58 +382,130 @@ static void _simpletcp_logServerConnection(SimpleTCP * h, int sd,
 	close(logfd);
 }
 
-static void _simpletcp_clientRead(SimpleTCP *h, int sd)
+static int _simpletcp_socks5Negotation(SimpleTCP *h, int sd, int event)
 {
-	struct epoll_event ev;
-	ssize_t numBytes = 0;
-	char message[10];
+	struct socks5_packet_bare {
+		uint8_t ver;
+		uint8_t nmethods;
+		uint8_t method;
+	} sck_pck;
 
-	/* prepare to accept the message */
-	memset(message, 0, (size_t)10);
+	struct iovec iov[3];
 
-	numBytes = recv(sd, message, (size_t)6, 0);
+	int res;
 
-	/* log result */
-	if(numBytes > 0) {
-		h->shdlib->log(SHADOW_LOG_LEVEL_MESSAGE, __FUNCTION__,
-				"successfully received '%s' message", message);
-	} else {
-		h->shdlib->log(SHADOW_LOG_LEVEL_WARNING, __FUNCTION__,
-				"unable to receive message");
-	}
+	/* Version */
+	sck_pck.ver = 0x05;
+	/* Number of methods */
+	sck_pck.nmethods = 1;
+	/* No auth */
+	sck_pck.method = 0;
 
-	/* tell epoll we no longer want to watch this socket */
-	epoll_ctl(h->ed, EPOLL_CTL_DEL, sd, NULL);
+	iov[0].iov_base = &sck_pck.ver;
+	iov[0].iov_len = sizeof(sck_pck.ver);
 
-	close(sd);
-	h->client.sd = 0;
+	iov[1].iov_base = &sck_pck.nmethods;
+	iov[1].iov_len = sizeof(sck_pck.nmethods);
+
+	iov[2].iov_base = &sck_pck.method;
+	iov[2].iov_len = sizeof(sck_pck.method);
 	
-	/* The client will connect again */ 
-	if (h->client.nconn > 0) {
-		unsigned int sleep_time = DEFAULT_SLEEP_CONN_TIME;
-		int smin, smax;
-
-		h->client.nconn--;
-
-		smin = h->client.sleep_min;
-		smax = h->client.sleep_max;
-
-		if (smin != 0 || smax != 0)
-			sleep_time = rand() % (smax - smin) + smin; 	
-		
-		_simpletcp_sleepCallback(h, sleep_time);
-
+	if (event == EPOLLIN) {
+		res = writev(sd, iov, 3);
+		if (res == -1) {
+			h->shdlib->log(SHADOW_LOG_LEVEL_CRITICAL, __FUNCTION__,
+				"error in writev %s", strerror(errno));
+			return -1;
+		}
 	} else {
-		h->isDone = 1;
+		res = readv(sd, iov, 2);
+		if (res == -1) {
+			h->shdlib->log(SHADOW_LOG_LEVEL_CRITICAL, __FUNCTION__,
+				"error in readv %s", strerror(errno));
+			return -1;
+		} 
+		
+		if (sck_pck.nmethods == 0xff) {
+			h->shdlib->log(SHADOW_LOG_LEVEL_CRITICAL, __FUNCTION__,
+				"error in negotation response");
+			return -1;
+		}
 	}
+
+	return 0;
 }
 
-static void _simpletcp_clientWrite(SimpleTCP *h, int sd)
+static int _simpletcp_socks5ConnRequest(SimpleTCP *h, int sd, int event)
 {
-	struct epoll_event ev;
-	ssize_t numBytes = 0;
-	char message[CLIENT_MSG_SIZE];
+	struct socks5_packet_request {
+		uint8_t ver;
+		uint8_t cmd;
+		uint8_t res;
+		uint8_t atyp;
+		uint32_t dstaddr; /* only ipv4 for test */
+		uint16_t dstport;
+	} sck_pck_req;
 	
+	struct iovec iov[6];
+	
+	int res;
+
+	/* connection request */
+	sck_pck_req.ver = 0x5;
+	sck_pck_req.cmd = 0x1;
+	sck_pck_req.res = 0x00;
+	sck_pck_req.atyp = 0x1;
+	sck_pck_req.dstaddr = h->client.serverIP;
+	sck_pck_req.dstport = h->client.serverPort;
+
+	iov[0].iov_base = &sck_pck_req.ver;
+	iov[0].iov_len = sizeof(sck_pck_req.ver);
+
+	iov[1].iov_base = &sck_pck_req.cmd;
+	iov[1].iov_len = sizeof(sck_pck_req.cmd);
+
+	iov[2].iov_base = &sck_pck_req.res;
+	iov[2].iov_len = sizeof(sck_pck_req.res);
+
+	iov[3].iov_base = &sck_pck_req.atyp;
+	iov[3].iov_len = sizeof(sck_pck_req.atyp);
+
+	iov[4].iov_base = &sck_pck_req.dstaddr;
+	iov[4].iov_len = sizeof(sck_pck_req.dstaddr);
+
+	iov[5].iov_base = &sck_pck_req.dstport;
+	iov[5].iov_len = sizeof(sck_pck_req.dstport);
+	
+	if (event == EPOLLIN) {
+		res = writev(sd, iov, 6);
+		if (res == -1) {
+			h->shdlib->log(SHADOW_LOG_LEVEL_CRITICAL, __FUNCTION__,
+				"error in writev %s", strerror(errno));
+			return -1;
+		}
+	} else {
+		res = readv(sd, iov, 6);
+		if (res == -1) {
+			h->shdlib->log(SHADOW_LOG_LEVEL_CRITICAL, __FUNCTION__,
+				"error in writev %s", strerror(errno));
+			return -1;
+		} 
+		
+		if (sck_pck_req.cmd != 0x00) {
+			h->shdlib->log(SHADOW_LOG_LEVEL_CRITICAL, __FUNCTION__,
+				"error in connection request response");
+			return -1;
+		}
+	}
+
+	return 0;
+}
+
+static void _simpletcp_clientSendMsg(SimpleTCP *h, int sd)
+{
+	char message[CLIENT_MSG_SIZE];
+	ssize_t numBytes = 0;
+
 	/* prepare the message */
 	memset(message, 0, (size_t)CLIENT_MSG_SIZE);
 	
@@ -424,12 +522,133 @@ static void _simpletcp_clientWrite(SimpleTCP *h, int sd)
 		h->shdlib->log(SHADOW_LOG_LEVEL_WARNING, __FUNCTION__,
 			"unable to send message");
 	}
+}
 
+static void _simpletcp_clientRecvMsg(SimpleTCP *h, int sd)
+{
+	ssize_t numBytes = 0;
+	char message[10];
+
+	/* prepare to accept the message */
+	memset(message, 0, (size_t)10);
+
+	numBytes = recv(sd, message, (size_t)6, 0);
+
+	/* log result */
+	if(numBytes > 0) {
+		h->shdlib->log(SHADOW_LOG_LEVEL_MESSAGE, __FUNCTION__,
+			"successfully received '%s' message", message);
+	} else {
+		h->shdlib->log(SHADOW_LOG_LEVEL_WARNING, __FUNCTION__,
+			"unable to receive message");
+	}
+}
+
+static void _simpletcp_clientWrite(SimpleTCP *h, int sd)
+{
+	struct epoll_event ev;
+	int s5_status = h->client.socks5_status;
+
+	switch(s5_status) {
+	case SOCKS5_INIT:
+		s5_status = SOCKS5_METHOD_NEGOTATION_REQ;
+		_simpletcp_socks5Negotation(h, sd, EPOLLIN);
+		break;
+	case SOCKS5_METHOD_NEGOTATION_OK:
+		s5_status = SOCKS5_CONNECTION_REQ;
+		_simpletcp_socks5ConnRequest(h, sd, EPOLLIN);
+		break;
+	case SOCKS5_CONNECTION_OK:
+		s5_status = SOCKS5_DONE;
+	case SOCKS5_DONE:
+		_simpletcp_clientSendMsg(h, sd);
+		break;
+	default:
+		h->shdlib->log(SHADOW_LOG_LEVEL_CRITICAL, __FUNCTION__,
+			"Unexpected or failing Socks5 status: %d", s5_status);
+		/* TODO: close the fd and remove from epoll */
+		_exit(EXIT_FAILURE);
+	}
+
+	h->client.socks5_status = s5_status;
 	/* tell epoll we don't care about writing anymore */
 	memset(&ev, 0, sizeof(struct epoll_event));
 	ev.events = EPOLLIN;
 	ev.data.fd = sd;
 	epoll_ctl(h->ed, EPOLL_CTL_MOD, sd, &ev);
+}
+
+static void _simpletcp_clientRead(SimpleTCP *h, int sd)
+{
+	struct epoll_event ev;
+	struct iovec iov[6];
+	int res;
+
+	switch(h->client.socks5_status) {
+	case SOCKS5_METHOD_NEGOTATION_REQ:
+		res = _simpletcp_socks5Negotation(h, sd, EPOLLOUT);
+		if (res == -1)
+			h->client.socks5_status = SOCKS5_METHOD_NEGOTATION_FAIL;
+		else 
+			h->client.socks5_status = SOCKS5_METHOD_NEGOTATION_OK;
+		
+		/* TODO clean this */
+		/* tell epoll we don't care about writing anymore */
+		memset(&ev, 0, sizeof(struct epoll_event));
+		ev.events = EPOLLOUT;
+		ev.data.fd = sd;
+		epoll_ctl(h->ed, EPOLL_CTL_MOD, sd, &ev);
+		
+		break;
+	case SOCKS5_CONNECTION_REQ:
+		res = _simpletcp_socks5ConnRequest(h, sd, EPOLLOUT);
+		if (res == -1)
+			h->client.socks5_status = SOCKS5_CONNECTION_FAIL;
+		else 
+			h->client.socks5_status = SOCKS5_CONNECTION_OK;
+		
+		/* TODO clean this */
+		/* tell epoll we don't care about writing anymore */
+		memset(&ev, 0, sizeof(struct epoll_event));
+		ev.events = EPOLLOUT;
+		ev.data.fd = sd;
+		epoll_ctl(h->ed, EPOLL_CTL_MOD, sd, &ev);
+		
+		break;
+	case SOCKS5_DONE:
+		/* tell epoll we no longer want to watch this socket */
+		epoll_ctl(h->ed, EPOLL_CTL_DEL, sd, NULL);
+
+		close(sd);
+		h->client.sd = 0;
+		
+		/* The client will connect again */ 
+		if (h->client.nconn > 0) {
+			unsigned int sleep_time = DEFAULT_SLEEP_CONN_TIME;
+			int smin, smax;
+
+			h->client.socks5_status = SOCKS5_INIT;
+			h->client.nconn--;
+
+			smin = h->client.sleep_min;
+			smax = h->client.sleep_max;
+
+			if (smin != 0 || smax != 0)
+				sleep_time = rand() % (smax - smin) + smin; 	
+			
+			_simpletcp_sleepCallback(h, sleep_time);
+
+		} else {
+			h->isDone = 1;
+		}
+		
+		break;
+	default:
+		h->shdlib->log(SHADOW_LOG_LEVEL_CRITICAL, __FUNCTION__,
+			"Unexpected or failing socks5 status: %d", 
+			h->client.socks5_status);
+		_exit(EXIT_FAILURE);
+	}
 }
 
 static void _simpletcp_serverRead(SimpleTCP *h, int sd)
