@@ -592,7 +592,7 @@ static void _simpletcp_clientRead(SimpleTCP *h, int sd)
 		else 
 			h->client.socks5_status = SOCKS5_METHOD_NEGOTATION_OK;
 		
-		/* TODO clean this */
+		/* TODO clean this: do not replicate it in the cases */
 		/* tell epoll we don't care about writing anymore */
 		memset(&ev, 0, sizeof(struct epoll_event));
 		ev.events = EPOLLOUT;
