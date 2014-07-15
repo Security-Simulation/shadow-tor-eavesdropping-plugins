@@ -623,7 +623,7 @@ static void _simpletcp_clientRead(SimpleTCP *h, int sd)
 		h->client.sd = 0;
 		
 		/* The client will connect again */ 
-		if (h->client.nconn > 0) {
+		if (h->client.nconn > 1) {
 			unsigned int sleep_time = DEFAULT_SLEEP_CONN_TIME;
 			int smin, smax;
 
