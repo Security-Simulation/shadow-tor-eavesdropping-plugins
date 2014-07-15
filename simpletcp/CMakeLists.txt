@@ -1,17 +1,11 @@
-## HTTP file server and client for transfering files through shadow
+## Simple random tcp connection client/server
 include_directories(${CMAKE_SOURCE_DIR}/src/utility)
 
 set(simpletcp_sources
 	simpletcp.c
-#    shd-filetransfer.c 
-#    shd-fileserver.c 
-#    shd-service-filegetter.c 
-#    shd-filegetter.c
-#    ../../utility/shd-cdf.c
-#    ../../utility/shd-utility.c
 )
 
-## service target to allow filetransfer service to be used by any plugin
+## service target to allow simpletcp service to be used by any plugin
 add_library(shadow-service-simpletcp STATIC ${simpletcp_sources})
 add_dependencies(shadow-service-simpletcp shadow-util)
 target_link_libraries(shadow-service-simpletcp ${RT_LIBRARIES} ${GLIB_LIBRARIES})

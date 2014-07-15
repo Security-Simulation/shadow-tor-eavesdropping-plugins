@@ -1,17 +1,11 @@
-## HTTP file server and client for transfering files through shadow
+## Eavesdrop analyzer server
 include_directories(${CMAKE_SOURCE_DIR}/src/utility)
 
 set(analyzer_sources
 	analyzer.c
-#    shd-filetransfer.c 
-#    shd-fileserver.c 
-#    shd-service-filegetter.c 
-#    shd-filegetter.c
-#    ../../utility/shd-cdf.c
-#    ../../utility/shd-utility.c
 )
 
-## service target to allow filetransfer service to be used by any plugin
+## service target to allow analyzer service to be used by any plugin
 add_library(shadow-service-analyzer STATIC ${analyzer_sources})
 add_dependencies(shadow-service-analyzer shadow-util)
 target_link_libraries(shadow-service-analyzer ${RT_LIBRARIES} ${GLIB_LIBRARIES})

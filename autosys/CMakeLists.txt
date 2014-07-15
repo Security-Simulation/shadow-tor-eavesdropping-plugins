@@ -1,17 +1,11 @@
-## HTTP file server and client for transfering files through shadow
+## Static proxy eavesdropper
 include_directories(${CMAKE_SOURCE_DIR}/src/utility)
 
 set(autosys_sources
 	autosys.c
-#    shd-filetransfer.c 
-#    shd-fileserver.c 
-#    shd-service-filegetter.c 
-#    shd-filegetter.c
-#    ../../utility/shd-cdf.c
-#    ../../utility/shd-utility.c
 )
 
-## service target to allow filetransfer service to be used by any plugin
+## service target to allow autosys service to be used by any plugin
 add_library(shadow-service-autosys STATIC ${autosys_sources})
 add_dependencies(shadow-service-autosys shadow-util)
 target_link_libraries(shadow-service-autosys ${RT_LIBRARIES} ${GLIB_LIBRARIES})

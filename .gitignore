@@ -29,8 +29,16 @@
 #log files
 *.log
 
+<<<<<<< HEAD
 #Existing plugins
 filetransfer
 scallion
 torctl
 shd-library.*
+=======
+#Project dir
+as/build/*
+analyzer/build/*
+udpclient/build/*
+simpletcp/build/*
+>>>>>>> d72198ac5e54cdf8b06d7927a6e7af38c6ceee3f
