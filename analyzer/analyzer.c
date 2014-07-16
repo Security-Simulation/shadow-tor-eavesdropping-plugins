@@ -35,7 +35,7 @@ struct _Analyzer {
 
 /* if option is specified, run analyzer client, else run analyzer server */
 static const char* USAGE = 
-	"USAGE: tor-analyzer hostname_bind:LISTEN_PORT\n";
+	"USAGE: analyzer hostname_bind:LISTEN_PORT filename\n";
 
 /* At the BEGINNING this is the proxy reader end, whose that 
    communicates with the real client (this would be a writer too then) */

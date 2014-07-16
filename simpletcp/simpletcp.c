@@ -11,14 +11,20 @@
 #define CLIENT_MSG_SIZE HOSTNAME_MAX_LEN
 #define DEFAULT_SLEEP_CONN_TIME 1000 //ms = 1s
 
-#define SOCKS5_INIT 7
-#define SOCKS5_METHOD_NEGOTATION_REQ 6
-#define SOCKS5_METHOD_NEGOTATION_OK  5
-#define SOCKS5_METHOD_NEGOTATION_FAIL 4
-#define SOCKS5_CONNECTION_REQ 3
-#define SOCKS5_CONNECTION_FAIL 2
-#define SOCKS5_CONNECTION_OK 1
-#define SOCKS5_DONE 0
+enum {
+	SOCKS5_DONE,
+	SOCKS5_CONNECTION_OK,
+	SOCKS5_CONNECTION_FAIL,
+	SOCKS5_CONNECTION_REQ,
+	SOCKS5_METHOD_NEGOTATION_FAIL,
+	SOCKS5_METHOD_NEGOTATION_OK,
+	SOCKS5_METHOD_NEGOTATION_REQ,
+	SOCKS5_INIT
+};
+
+#define SOCKS5_PCK_REQUEST_SIZE (sizeof(uint8_t) * 4 +\
+				 sizeof(uint32_t) +\
+				 sizeof(uint16_t))
 
 static int _simpletcp_startClient(SimpleTCP* h) {
 	int res;
@@ -180,7 +186,7 @@ static int _simpletcp_checkClientArgs(int argc, char **argv, int *retargs)
 	
 	}
 	nconn = (int)strtol(argv[4], &tmp_end, 10);
-	if (errno != 0 || nconn > INT_MAX || *tmp_end != '\0'){
+	if (nconn > INT_MAX || *tmp_end != '\0'){
 		return -1;
 	}
 	
@@ -384,48 +390,35 @@ static void _simpletcp_logServerConnection(SimpleTCP * h, int sd,
 
 static int _simpletcp_socks5Negotation(SimpleTCP *h, int sd, int event)
 {
-	struct socks5_packet_bare {
-		uint8_t ver;
-		uint8_t nmethods;
-		uint8_t method;
-	} sck_pck;
-
-	struct iovec iov[3];
+	uint8_t sck_pck[3];
 
 	int res;
 
 	/* Version */
-	sck_pck.ver = 0x05;
+	sck_pck[0] = 0x05;
 	/* Number of methods */
-	sck_pck.nmethods = 1;
+	sck_pck[1] = 1;
 	/* No auth */
-	sck_pck.method = 0;
+	sck_pck[2] = 0;
 
-	iov[0].iov_base = &sck_pck.ver;
-	iov[0].iov_len = sizeof(sck_pck.ver);
 
-	iov[1].iov_base = &sck_pck.nmethods;
-	iov[1].iov_len = sizeof(sck_pck.nmethods);
-
-	iov[2].iov_base = &sck_pck.method;
-	iov[2].iov_len = sizeof(sck_pck.method);
-	
-	if (event == EPOLLIN) {
-		res = writev(sd, iov, 3);
+	if (event & EPOLLOUT) {
+		res = write(sd, sck_pck, 3);
 		if (res == -1) {
 			h->shdlib->log(SHADOW_LOG_LEVEL_CRITICAL, __FUNCTION__,
 				"error in writev %s", strerror(errno));
 			return -1;
 		}
-	} else {
-		res = readv(sd, iov, 2);
+	} else if (event & EPOLLIN) {
+		/* server sends us only version and response bytes. */
+		res = read(sd, sck_pck, 2);
 		if (res == -1) {
 			h->shdlib->log(SHADOW_LOG_LEVEL_CRITICAL, __FUNCTION__,
 				"error in readv %s", strerror(errno));
 			return -1;
 		} 
 		
-		if (sck_pck.nmethods == 0xff) {
+		if (sck_pck[1] == 0xff) {
 			h->shdlib->log(SHADOW_LOG_LEVEL_CRITICAL, __FUNCTION__,
 				"error in negotation response");
 			return -1;
@@ -435,63 +428,43 @@ static int _simpletcp_socks5Negotation(SimpleTCP *h, int sd, int event)
 	return 0;
 }
 
+
 static int _simpletcp_socks5ConnRequest(SimpleTCP *h, int sd, int event)
 {
-	struct socks5_packet_request {
-		uint8_t ver;
-		uint8_t cmd;
-		uint8_t res;
-		uint8_t atyp;
-		uint32_t dstaddr; /* only ipv4 for test */
-		uint16_t dstport;
-	} sck_pck_req;
-	
-	struct iovec iov[6];
-	
+	uint8_t sck_pck_req[SOCKS5_PCK_REQUEST_SIZE];
+
 	int res;
 
 	/* connection request */
-	sck_pck_req.ver = 0x5;
-	sck_pck_req.cmd = 0x1;
-	sck_pck_req.res = 0x00;
-	sck_pck_req.atyp = 0x1;
-	sck_pck_req.dstaddr = h->client.serverIP;
-	sck_pck_req.dstport = h->client.serverPort;
+	/* Version */
+	sck_pck_req[0] = 0x5;
+	/* CONNECT command */
+	sck_pck_req[1] = 0x1;
+	/* reserved bytes */
+	sck_pck_req[2] = 0x00;
+	/* Address type IPv4 */
+	sck_pck_req[3] = 0x1;
+	/* destination address */
+	memcpy(&sck_pck_req[4], &h->client.serverIP, sizeof(uint32_t));
+	/* destination port */
+	memcpy(&sck_pck_req[4 + sizeof(uint32_t)], &h->client.serverPort, sizeof(uint16_t));
 
-	iov[0].iov_base = &sck_pck_req.ver;
-	iov[0].iov_len = sizeof(sck_pck_req.ver);
-
-	iov[1].iov_base = &sck_pck_req.cmd;
-	iov[1].iov_len = sizeof(sck_pck_req.cmd);
-
-	iov[2].iov_base = &sck_pck_req.res;
-	iov[2].iov_len = sizeof(sck_pck_req.res);
-
-	iov[3].iov_base = &sck_pck_req.atyp;
-	iov[3].iov_len = sizeof(sck_pck_req.atyp);
-
-	iov[4].iov_base = &sck_pck_req.dstaddr;
-	iov[4].iov_len = sizeof(sck_pck_req.dstaddr);
-
-	iov[5].iov_base = &sck_pck_req.dstport;
-	iov[5].iov_len = sizeof(sck_pck_req.dstport);
-	
-	if (event == EPOLLIN) {
-		res = writev(sd, iov, 6);
+	if (event & EPOLLOUT) {
+		res = write(sd, sck_pck_req, SOCKS5_PCK_REQUEST_SIZE);
 		if (res == -1) {
 			h->shdlib->log(SHADOW_LOG_LEVEL_CRITICAL, __FUNCTION__,
-				"error in writev %s", strerror(errno));
+				"error in write %s", strerror(errno));
 			return -1;
 		}
-	} else {
-		res = readv(sd, iov, 6);
+	} else if (event & EPOLLIN) {
+		res = read(sd, sck_pck_req, SOCKS5_PCK_REQUEST_SIZE);
 		if (res == -1) {
 			h->shdlib->log(SHADOW_LOG_LEVEL_CRITICAL, __FUNCTION__,
-				"error in writev %s", strerror(errno));
+				"error in read %s", strerror(errno));
 			return -1;
 		} 
 		
-		if (sck_pck_req.cmd != 0x00) {
+		if (sck_pck_req[1] != 0x00) {
 			h->shdlib->log(SHADOW_LOG_LEVEL_CRITICAL, __FUNCTION__,
 				"error in connection request response");
 			return -1;
@@ -552,11 +525,11 @@ static void _simpletcp_clientWrite(SimpleTCP *h, int sd)
 	switch(s5_status) {
 	case SOCKS5_INIT:
 		s5_status = SOCKS5_METHOD_NEGOTATION_REQ;
-		_simpletcp_socks5Negotation(h, sd, EPOLLIN);
+		_simpletcp_socks5Negotation(h, sd, EPOLLOUT);
 		break;
 	case SOCKS5_METHOD_NEGOTATION_OK:
 		s5_status = SOCKS5_CONNECTION_REQ;
-		_simpletcp_socks5ConnRequest(h, sd, EPOLLIN);
+		_simpletcp_socks5ConnRequest(h, sd, EPOLLOUT);
 		break;
 	case SOCKS5_CONNECTION_OK:
 		s5_status = SOCKS5_DONE;
@@ -586,7 +559,7 @@ static void _simpletcp_clientRead(SimpleTCP *h, int sd)
 
 	switch(h->client.socks5_status) {
 	case SOCKS5_METHOD_NEGOTATION_REQ:
-		res = _simpletcp_socks5Negotation(h, sd, EPOLLOUT);
+		res = _simpletcp_socks5Negotation(h, sd, EPOLLIN);
 		if (res == -1)
 			h->client.socks5_status = SOCKS5_METHOD_NEGOTATION_FAIL;
 		else 
@@ -601,7 +574,7 @@ static void _simpletcp_clientRead(SimpleTCP *h, int sd)
 		
 		break;
 	case SOCKS5_CONNECTION_REQ:
-		res = _simpletcp_socks5ConnRequest(h, sd, EPOLLOUT);
+		res = _simpletcp_socks5ConnRequest(h, sd, EPOLLIN);
 		if (res == -1)
 			h->client.socks5_status = SOCKS5_CONNECTION_FAIL;
 		else 
