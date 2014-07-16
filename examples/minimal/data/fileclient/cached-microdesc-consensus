@@ -1,0 +1,50 @@
+network-status-version 3 microdesc
+vote-status consensus
+consensus-method 17
+valid-after 1970-01-01 00:20:00
+fresh-until 1970-01-01 00:25:00
+valid-until 1970-01-01 00:35:00
+voting-delay 20 20
+client-versions 
+server-versions 
+known-flags Authority Exit Fast Guard HSDir Running Stable V2Dir Valid
+dir-source 4uthority BA3FDA7CE3B41FBF9BB3615BE6ACD28D883E694B 11.0.0.7 11.0.0.7 9112 9111
+contact shadow-support@cs.umn.edu
+vote-digest 43CD1DEF578FBC06CACB8AB83F4D5A4FA0556B5A
+r relay2 Uz5Z9+8wy9E80E09DmdjrkkeZ4g 1970-01-01 00:01:00 11.0.0.4 9111 9112
+m HM1+O2laYpPtQh14NxwfotMphjBYJz9dxXCW3HDX8R8
+s Fast Guard HSDir Running Stable V2Dir Valid
+v Tor 0.2.5.2-alpha
+w Bandwidth=1024 Unmeasured=1
+r bridge Yqz3vtff/r2IvPLDDm+3id7bmac 1970-01-01 00:06:06 11.0.0.2 9111 0
+m MhW6N13GbozHNw5MDSY3xvU5/Kcm6QjkNPiASttqmi0
+s Fast Guard Running Stable Valid
+v Tor 0.2.5.2-alpha
+w Bandwidth=1024 Unmeasured=1
+r 4uthority pSyltWxk2GT2rkPlbymsvVcG3aE 1970-01-01 00:01:00 11.0.0.7 9111 9112
+m D994KyTJZzVXBtWIRapxGU1NxVMM2uizeOo+8QX1LBk
+s Authority Fast HSDir Running Stable V2Dir Valid
+v Tor 0.2.5.2-alpha
+w Bandwidth=1024 Unmeasured=1
+r exit1 pwJkPVooQmY2C3XPqjbBy1IyN28 1970-01-01 00:01:00 11.0.0.5 9111 9112
+m J+5p5t92mkwdHNrEOTNIA8MWRpEQZYBUJYlUGkerHSs
+s Exit Fast Guard HSDir Running Stable V2Dir Valid
+v Tor 0.2.5.2-alpha
+w Bandwidth=1024 Unmeasured=1
+r relay1 saPA5q0yWYDTLHIEMXpEf7fmIko 1970-01-01 00:01:00 11.0.0.3 9111 9112
+m S+WP4mHf5oGdexcIOn0Fnb/Qg/mvnvfnQrsWJROH+ik
+s Fast Guard HSDir Running Stable V2Dir Valid
+v Tor 0.2.5.2-alpha
+w Bandwidth=1024 Unmeasured=1
+r exit2 wXkiF6kkr5TJdOFIbrglSXTvQfs 1970-01-01 00:01:00 11.0.0.6 9111 9112
+m nRhTMKyzDsVUmohTEnfJvaBVYj7L52RTmzspkDK1m34
+s Exit Fast Guard HSDir Running Stable V2Dir Valid
+v Tor 0.2.5.2-alpha
+w Bandwidth=1024 Unmeasured=1
+directory-footer
+directory-signature sha256 BA3FDA7CE3B41FBF9BB3615BE6ACD28D883E694B B6B52D36DA47A014B5CF65A55EDC62C93523DCC3
+-----BEGIN SIGNATURE-----
+UawUl7bLQfnSyzSS8RlJtdt6DhsIcvLcdfBt+4eK/8/f7BGf/pdHadiOgvxbOtTC
+yV0qGf3bywZBmM2IlhWd10GXGCi566vGBJiDFihRYE0HLW1evSyNH4nCDhI0HnmW
+y8pjhuSnwB8328FhiaOcCEWAX+DfETQG7tyDoYfrWAI=
+-----END SIGNATURE-----

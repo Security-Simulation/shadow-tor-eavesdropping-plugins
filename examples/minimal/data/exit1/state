@@ -1,0 +1,32 @@
+# Tor state file last generated on 2554-07-22 01:34:33 local time
+# Other times below are in UTC
+# You *do not* need to edit this file.
+
+EntryGuard relay1 B1A3C0E6AD325980D32C7204317A447FB7E6224A DirCache
+EntryGuardAddedBy B1A3C0E6AD325980D32C7204317A447FB7E6224A 0.2.5.2-alpha 1969-12-13 23:29:10
+EntryGuardPathBias 11.000000 11.000000 11.000000 0.000000 0.000000 0.000000
+EntryGuard exit2 C1792217A924AF94C974E1486EB8254974EF41FB DirCache
+EntryGuardAddedBy C1792217A924AF94C974E1486EB8254974EF41FB 0.2.5.2-alpha 1969-12-17 07:59:34
+EntryGuardPathBias 2.000000 2.000000 2.000000 0.000000 0.000000 0.000000
+EntryGuard 4uthority A52CA5B56C64D864F6AE43E56F29ACBD5706DDA1 DirCache
+EntryGuardUnlistedSince 1970-01-01 00:05:35
+EntryGuardAddedBy A52CA5B56C64D864F6AE43E56F29ACBD5706DDA1 0.2.5.2-alpha 1969-12-23 05:16:33
+EntryGuardPathBias 3.000000 3.000000 3.000000 0.000000 0.000000 0.000000
+BWHistoryReadEnds 1970-01-01 00:30:00
+BWHistoryReadValues 775168,198656
+BWHistoryReadMaxima 71680,1024
+BWHistoryWriteEnds 1970-01-01 00:30:00
+BWHistoryWriteValues 795648,234496
+BWHistoryWriteMaxima 70656,1024
+BWHistoryDirReadEnds 1970-01-01 00:30:00
+BWHistoryDirReadValues 0,0
+BWHistoryDirReadMaxima 0,0
+BWHistoryDirWriteEnds 1970-01-01 00:30:00
+BWHistoryDirWriteValues 0,0
+BWHistoryDirWriteMaxima 0,0
+TorVersion Tor 0.2.5.2-alpha
+LastRotatedOnionKey 1970-01-01 00:01:00
+LastWritten 2554-07-21 23:34:33
+TotalBuildTimes 33
+CircuitBuildTimeBin 625 30
+CircuitBuildTimeBin 1025 3

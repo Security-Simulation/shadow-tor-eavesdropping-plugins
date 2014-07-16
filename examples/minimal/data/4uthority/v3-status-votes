@@ -1,0 +1,101 @@
+network-status-version 3
+vote-status vote
+consensus-methods 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17
+published 1970-01-01 00:29:21
+valid-after 1970-01-01 00:30:00
+fresh-until 1970-01-01 00:35:00
+valid-until 1970-01-01 00:45:00
+voting-delay 20 20
+known-flags Authority Exit Fast Guard HSDir Running Stable V2Dir Valid
+flag-thresholds stable-uptime=1701 stable-mtbf=1701 fast-speed=102000 guard-wfu=98.000% guard-tk=0 guard-bw-inc-exits=1024000 guard-bw-exc-exits=1024000 enough-mtbf=0 ignoring-advertised-bws=0
+params 
+dir-source 4uthority BA3FDA7CE3B41FBF9BB3615BE6ACD28D883E694B 11.0.0.7 11.0.0.7 9112 9111
+contact shadow-support@cs.umn.edu
+dir-key-certificate-version 3
+fingerprint BA3FDA7CE3B41FBF9BB3615BE6ACD28D883E694B
+dir-key-published 2013-06-05 15:49:15
+dir-key-expires 2015-06-05 15:49:15
+dir-identity-key
+-----BEGIN RSA PUBLIC KEY-----
+MIIBigKCAYEAyZxUeqUjj6BZU2VbFGQHBa61QIAk0vlX1gimAulxiuUHvkwcpleG
+zh3wwK1f0BsxYJiDBBY6NEh74x4/gSMASMUWFAV/BBS04u3Ssa3LwKOMgbp4bmRZ
+6Aa7IhybeoIyLT5Ke1tvvQRWZxT8irawLtpIAeUZK7hatouYi7dcxG80yCoGw5yo
+XaVlhvQp43GZTpdyQ7Q3wvqME1TGuXQNMRzLwgiMMLIiJEw5QPUDyPc3+m2XaQOc
+GeZuuydRpnDMmIIF3KQa+q0QCItDeNQRyF10RtwrGDDXqlwnai09aAH2NJ3pSVPC
+imhHzKBGVEID1ejvfyYzmDqNZ1iIBuaZLWqThfQ8SOP7z9o79xI+VZmU4Njp6aMZ
+re55tSVs3UfpZUUzigQhTzsu02eAdDH4XXYXqZkNtGotPGkNToLgVov954dCXOqf
+ewkbdzPVre3OFqD6T3sRErUusW4M3RbO7R9c9JtIq/XV8+IPAtUy2vIwiujLqsrl
+4l8C/KbjWDftAgMBAAE=
+-----END RSA PUBLIC KEY-----
+dir-signing-key
+-----BEGIN RSA PUBLIC KEY-----
+MIGJAoGBAOMVf/X0AEJ1P8PNMYEwODVcyurWJy0Jg7HKK4/lk+sGi8byNsC47ifV
+mxk9UBqtxRXJpNHX0PXXjxi+3/YaRZOZ0tz7sYk4GSdLIRJX6/vqd9h5e521jncc
+H/78fH2BptX4SMpsxIg29drF45fW6wBux8Vs7WnSBogfUw6o83dJAgMBAAE=
+-----END RSA PUBLIC KEY-----
+dir-key-crosscert
+-----BEGIN ID SIGNATURE-----
+QlNzjkc5mYLspTEpr3X3Na1xbJqmsjKDQ2eWNW5JaSu1RMnYQjnfR5X1EpS20H57
+O/3IO/9LvS33VBbzDnyQutwHuLRugQTDYhffx1brPvWY+JU8XkM5ORKuIsBXUAbQ
+UfILeQSmtKv0BbBMGsje16+14CNaY/ZbUo7MoEwpiiM=
+-----END ID SIGNATURE-----
+dir-key-certification
+-----BEGIN SIGNATURE-----
+CD6Dt68GtOUHKgEBS8XHT3S/SykcPF/4+byFfx/hwBwLdOR7pFMx9V+wH6Q/8Gzy
+UAdWsy0alhLEtKdICse1xUfT+b6KQh/5pJrFQXTY1/heAltUNZTwRTjWdcAo0xYU
+kxb3f8KZNA7+wFVNTshtXP1XNAjMAMB7zqVWgrB38K6r8xafBMvPe/m+CGx7nBc1
+7G8MpId6WrTbX/boEuBc5HQW9BH5WYL979LjkpgJ04YiWqZ8SLo/oq3sZPNCojQu
+MzW/KtMDs6goNEaqwsm2OiIZdckyHGLvJUb8YOOQ4b7tFWD5oNfbxCTWCzpV9nDO
+mL4FNoCWYWpnVbLptJsdguwTRC8pRWq6Mihe3Anlxl3ONyfE0Rs8Ex9JSsiqd2S7
+oM1nxzzihVTHooSMdxHPSzDCNWYHw/Fd3W3frqUo6kOoW7Oe67xxbrx7AvFpAyAr
+6gzpA7LpPe7Xdo0HSWl04jKTr27aDc4JFepMT1zEYxwH3nPBIRG87etWKI0kB9OG
+-----END SIGNATURE-----
+r relay2 Uz5Z9+8wy9E80E09DmdjrkkeZ4g wNdUpS/Z5ik0CnjHFLQsDJpfN44 1970-01-01 00:01:00 11.0.0.4 9111 9112
+s Fast Guard HSDir Running Stable V2Dir Valid
+v Tor 0.2.5.2-alpha
+w Bandwidth=1024
+p reject 1-65535
+m 8,9,10,11,12,13,14,15 sha256=zgOpSbamjj++72XbaEE4LXmEedqCDBWQjjh4tADqNcw
+m 16,17 sha256=HM1+O2laYpPtQh14NxwfotMphjBYJz9dxXCW3HDX8R8
+r bridge Yqz3vtff/r2IvPLDDm+3id7bmac KidkI1KQKfVcIx1H23d9zAmuR6A 1970-01-01 00:06:06 11.0.0.2 9111 0
+s Fast Guard Running Stable Valid
+v Tor 0.2.5.2-alpha
+w Bandwidth=1024
+p reject 1-65535
+m 8,9,10,11,12,13,14,15 sha256=gHh221P2zdCSpxb5Ja91xpqgJfxgeAVKNxvNHSTltcs
+m 16,17 sha256=MhW6N13GbozHNw5MDSY3xvU5/Kcm6QjkNPiASttqmi0
+r 4uthority pSyltWxk2GT2rkPlbymsvVcG3aE YG5hR5acheNQNTfFhRf6vIP4heE 1970-01-01 00:01:00 11.0.0.7 9111 9112
+s Authority Fast HSDir Running Stable V2Dir Valid
+v Tor 0.2.5.2-alpha
+w Bandwidth=1024
+p reject 1-65535
+m 8,9,10,11,12,13,14,15 sha256=KExU4XZRG6SO7qUFe/mk/1lxyy4UpzCrWBbLz5wfYwk
+m 16,17 sha256=D994KyTJZzVXBtWIRapxGU1NxVMM2uizeOo+8QX1LBk
+r exit1 pwJkPVooQmY2C3XPqjbBy1IyN28 EnDBVb0hMDcqwikqBRi4kh9BsA0 1970-01-01 00:01:00 11.0.0.5 9111 9112
+s Exit Fast Guard HSDir Running Stable V2Dir Valid
+v Tor 0.2.5.2-alpha
+w Bandwidth=1024
+p accept 1-65535
+m 8,9,10,11,12,13,14,15 sha256=lrQUNEhcj6cxHjnA2sjqCq56HZJbZSqnM16coblcqv0
+m 16,17 sha256=J+5p5t92mkwdHNrEOTNIA8MWRpEQZYBUJYlUGkerHSs
+r relay1 saPA5q0yWYDTLHIEMXpEf7fmIko CTeYz/0M2fZoisoDdjfaBk8Up7Q 1970-01-01 00:01:00 11.0.0.3 9111 9112
+s Fast Guard HSDir Running Stable V2Dir Valid
+v Tor 0.2.5.2-alpha
+w Bandwidth=1024
+p reject 1-65535
+m 8,9,10,11,12,13,14,15 sha256=egsyrgubQZ+otWk8cwJHG/DBwc7dSXk/6xtFdYP4ex8
+m 16,17 sha256=S+WP4mHf5oGdexcIOn0Fnb/Qg/mvnvfnQrsWJROH+ik
+r exit2 wXkiF6kkr5TJdOFIbrglSXTvQfs EAotxi6oK4yE8c8m1l9FvTVmfpU 1970-01-01 00:01:00 11.0.0.6 9111 9112
+s Exit Fast Guard HSDir Running Stable V2Dir Valid
+v Tor 0.2.5.2-alpha
+w Bandwidth=1024
+p accept 1-65535
+m 8,9,10,11,12,13,14,15 sha256=zDNw7KygQ8r9a5fc1MbinpHs2CwXfC2f/eanBHO2odY
+m 16,17 sha256=nRhTMKyzDsVUmohTEnfJvaBVYj7L52RTmzspkDK1m34
+directory-footer
+directory-signature BA3FDA7CE3B41FBF9BB3615BE6ACD28D883E694B B6B52D36DA47A014B5CF65A55EDC62C93523DCC3
+-----BEGIN SIGNATURE-----
+Vw4DDcSveSutlgu6ze2uTIKuz2rxwBXnhW14kiEZN/UchbrdMwhGx4Jqnw7swf05
+01UUg/eIPYdrj2RVM7I1uJ0Z+uLWCkcLBsHv70BBW9WDGOKLd78nZav7/nWRMot+
+Mw0sZYjd69ryhPkDyTACfOpZeYB2JS9p/KG2qUTlbiE=
+-----END SIGNATURE-----

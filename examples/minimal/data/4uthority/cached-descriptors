@@ -1,0 +1,31 @@
+router 4uthority 11.0.0.7 9111 0 9112
+platform Tor 0.2.5.2-alpha on Linux
+protocols Link 1 2 Circuit 1
+published 1970-01-01 00:00:01
+fingerprint A52C A5B5 6C64 D864 F6AE 43E5 6F29 ACBD 5706 DDA1
+uptime 0
+bandwidth 1024000 1024000 1024000
+extra-info-digest 75837623F717F7704B3DB810802113B78712E9F7
+caches-extra-info
+onion-key
+-----BEGIN RSA PUBLIC KEY-----
+MIGJAoGBALKXgY48QW6VcZ7Bie6VHC/m2fmQQT1I5lYSzxdhUyyIiJN9VIn0ZBDt
+T15eosgDJj1XkODrLx3tys/djH694q8oPF4SButhykjdmqLMz00AN5vL/h3/bf5h
+eNGdB8qnN/rdb8SLERgLPX7eoZrtvNEmndR3oDSXLqTy2FkRIMaHAgMBAAE=
+-----END RSA PUBLIC KEY-----
+signing-key
+-----BEGIN RSA PUBLIC KEY-----
+MIGJAoGBAMMj/mANiyJvOiPVUulx2RNiyKYJIslDTSw89lInTKcZ1jff27TGekyK
++hXzq0xZ7XA5BAj9kA0vtkjr4NKlgi7zDRTCOwRBIynojdOiaVWiho+y4lxc2adb
+76pLQxpM1+PjNjgoqKEYDWg3qdf7F0e3yoIwr9u2DEVC0FkyQtULAgMBAAE=
+-----END RSA PUBLIC KEY-----
+hidden-service-dir
+contact shadow-support@cs.umn.edu
+ntor-onion-key exRWcmE3jbPPAOVuCjKSataqkD6PCzPyRbPmAIMMylY=
+reject *:*
+router-signature
+-----BEGIN SIGNATURE-----
+n5hmZnHuRHCS/ag7RtmVaxngaNLEF4/0xn7h4AsT85WWual6Be/J8jgVswq/vnmN
+Y8xD5A200M0AaxTCblTpHIDloZwml2M1tCqFw6w9J3OMi6FaRT05Rq09YTkkPe3A
+UmBL6LgBAihLOWkPVgIkKo5pWjunuLsvPueNsyJAuIE=
+-----END SIGNATURE-----

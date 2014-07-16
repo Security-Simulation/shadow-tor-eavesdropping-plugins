@@ -1,0 +1,193 @@
+@downloaded-at 1970-01-01 00:05:30
+@source "11.0.0.7"
+router 4uthority 11.0.0.7 9111 0 9112
+platform Tor 0.2.5.2-alpha on Linux
+protocols Link 1 2 Circuit 1
+published 1970-01-01 00:01:00
+fingerprint A52C A5B5 6C64 D864 F6AE 43E5 6F29 ACBD 5706 DDA1
+uptime 1
+bandwidth 1024000 1024000 1024000
+extra-info-digest 14ED7E8D6F4A271048FE988FFDE9023524D2EF9F
+caches-extra-info
+onion-key
+-----BEGIN RSA PUBLIC KEY-----
+MIGJAoGBALKXgY48QW6VcZ7Bie6VHC/m2fmQQT1I5lYSzxdhUyyIiJN9VIn0ZBDt
+T15eosgDJj1XkODrLx3tys/djH694q8oPF4SButhykjdmqLMz00AN5vL/h3/bf5h
+eNGdB8qnN/rdb8SLERgLPX7eoZrtvNEmndR3oDSXLqTy2FkRIMaHAgMBAAE=
+-----END RSA PUBLIC KEY-----
+signing-key
+-----BEGIN RSA PUBLIC KEY-----
+MIGJAoGBAMMj/mANiyJvOiPVUulx2RNiyKYJIslDTSw89lInTKcZ1jff27TGekyK
++hXzq0xZ7XA5BAj9kA0vtkjr4NKlgi7zDRTCOwRBIynojdOiaVWiho+y4lxc2adb
+76pLQxpM1+PjNjgoqKEYDWg3qdf7F0e3yoIwr9u2DEVC0FkyQtULAgMBAAE=
+-----END RSA PUBLIC KEY-----
+hidden-service-dir
+contact shadow-support@cs.umn.edu
+ntor-onion-key exRWcmE3jbPPAOVuCjKSataqkD6PCzPyRbPmAIMMylY=
+reject *:*
+router-signature
+-----BEGIN SIGNATURE-----
+E637iU45XWlqGWsVvmyMu9POBohUBi/1yaliiuWy1nqAlWHhe1M9DBTUtNDmmx1l
+vNz+cCiF4jIfM9Vn60NREVuv89yjNC8Csn7zNwQ+90DK8sqcGricsmTcsmsU50xk
+YJo0icipJ2I6iO9ECuqg/BoATW71aHgKNxL4GGORk18=
+-----END SIGNATURE-----
+@downloaded-at 1970-01-01 00:05:30
+@source "11.0.0.7"
+router exit1 11.0.0.5 9111 0 9112
+platform Tor 0.2.5.2-alpha on Linux
+protocols Link 1 2 Circuit 1
+published 1970-01-01 00:01:00
+fingerprint A702 643D 5A28 4266 360B 75CF AA36 C1CB 5232 376F
+uptime 0
+bandwidth 1024000 1024000 1024000
+extra-info-digest EC04BB71E727BEE7FD1387AD80C38E52DDF37132
+onion-key
+-----BEGIN RSA PUBLIC KEY-----
+MIGJAoGBAMiKPFatVGTdHzibsPQlbWq8lu0wjV7SlhExgAsEvV73X0TwK+a6bNVe
+fmNlkdqUgV6RpnYIyaxzd7WpTJMELVIaiOPVgNV3fsQslPPd5uhNDqHF1KYvFQ0S
+3V/z+Zli3hBV4F3RqskKC+A5UA5jFeu5bIPawsgjPHXilDniUnKzAgMBAAE=
+-----END RSA PUBLIC KEY-----
+signing-key
+-----BEGIN RSA PUBLIC KEY-----
+MIGJAoGBAM0Meex3+jYS8aaLkShO2kdfAREkpMR8uTCofXUfhtPY5ANyW7VlhR77
++0FGZq5FAG7uQI28C7LLYJgztRygtE1wAxQ1PoqUwci2xujhY1HQ2OHUXc/zl5Fk
+cv/3W3ONMqVZXKicKxuLaK/aXu7LpBZI0Eakh131uzRgQH+4xYRfAgMBAAE=
+-----END RSA PUBLIC KEY-----
+hidden-service-dir
+contact shadow-support@cs.umn.edu
+ntor-onion-key ZrmrO/Xe6IH1WWVsHwoBwPUbFYrXOSQ3RYNGpfj8ElE=
+accept *:*
+router-signature
+-----BEGIN SIGNATURE-----
+vSMHPLZjo/TGEvMlKBdfL2ZeC3mcF8lptYcM2+OPXoZmRS2SVOqpgln5dPzwkipd
+U6OoTUggd58hNB/FYM68gAwZNhFL++fhD4Hktw8CV6KdIDNJT5ZfBW4WX25wfd8H
+xEdOQTy1Kad3uVNFJdC8KgXtploUKZpnvvGwCLQ/4YE=
+-----END SIGNATURE-----
+@downloaded-at 1970-01-01 00:05:30
+@source "11.0.0.7"
+router relay1 11.0.0.3 9111 0 9112
+platform Tor 0.2.5.2-alpha on Linux
+protocols Link 1 2 Circuit 1
+published 1970-01-01 00:01:00
+fingerprint B1A3 C0E6 AD32 5980 D32C 7204 317A 447F B7E6 224A
+uptime 0
+bandwidth 1024000 1024000 1024000
+extra-info-digest C14F41C901A0AF61CA51DB82448CE6CE0310453E
+onion-key
+-----BEGIN RSA PUBLIC KEY-----
+MIGJAoGBAMbawJTS/gIYFeLCFXZYW5h4ZX5t/vmVVEDKjA0GCfdzcJPLipx4VhSr
+3MV44zS1agXUwpWa8bEaoqFtF8sSYE33o9fXzlyn7rBaobPDM9rbN1QSpfMzY2s7
+FqiPYyeFABq3J0tZhYwSMz7xFASstPztfJCtLgm4CCoyXBN5J0H5AgMBAAE=
+-----END RSA PUBLIC KEY-----
+signing-key
+-----BEGIN RSA PUBLIC KEY-----
+MIGJAoGBAKeEiwygEM3Nw+NTE4XcZRmjL7UTvSn38vYEnp8kGx8lIB+wnlMBZ0iF
+lLfEfOnXtb7fWw0n7W0LPRt3BHIUfTlCsZt9LewWYy32BctyM07VN65M3O4bt2y5
+TEg1MTRAxhBbkcqYLUWEhcsVWdis9y65SITnIDjUr75yw3aIKjbpAgMBAAE=
+-----END RSA PUBLIC KEY-----
+hidden-service-dir
+contact shadow-support@cs.umn.edu
+ntor-onion-key eQQOSMnrT6Z+/ojPqhiBzWeNQNWcQAp3HU3L4pCUEjo=
+reject *:*
+router-signature
+-----BEGIN SIGNATURE-----
+eihwIKgmIla70eV0d756cvzEFGmzhEhIHsDgiMFOZDoIEUWMKJO22Bq2mkU6CSkj
+L3Sq94mAAti4o605VuCNRDeHpSj4oyB6W1XE8RmThT+te+kWpGNWTKMjmoPJCS46
+j44LIXgNSodYgUjU1DaFW4ofVbtj67DQPNi6JFYi7q0=
+-----END SIGNATURE-----
+@downloaded-at 1970-01-01 00:05:30
+@source "11.0.0.7"
+router exit2 11.0.0.6 9111 0 9112
+platform Tor 0.2.5.2-alpha on Linux
+protocols Link 1 2 Circuit 1
+published 1970-01-01 00:01:00
+fingerprint C179 2217 A924 AF94 C974 E148 6EB8 2549 74EF 41FB
+uptime 0
+bandwidth 1024000 1024000 1024000
+extra-info-digest 55B35A475A65CB03EA6A87A43E3B4A57641A1763
+onion-key
+-----BEGIN RSA PUBLIC KEY-----
+MIGJAoGBAOZjGZb2w1+DTKTUoB/42jVPd4mYoFe9WoKarCWxcPbNHPDvgesCi0wA
+sz8aTJBgZZPuD1Xe+3uvXyrDN9ThZGzBxgmq1j/qjFZYD+TSwZONUYkLW9xrYMc1
+dGVczMpzI5HIObd7mW0/ver6TGaGEjwIHZEmv/4W2gzcj+FQ/W4VAgMBAAE=
+-----END RSA PUBLIC KEY-----
+signing-key
+-----BEGIN RSA PUBLIC KEY-----
+MIGJAoGBAL9rw00LoD15pTlPHV3DXWRGmh3Ifj3vYB+IDh+eXLVh8k9IYoORfT/T
+dW5raWbl9vNquIpVe3cGIjUGpajcUyw3VftWv83RvPQrCD0UkwAIdPi3l694fTVX
+l/cxFJj9sj1Kd9gdnfv9pA5a07m8R0knBQ0Ah7bQRFc7mzlPBssXAgMBAAE=
+-----END RSA PUBLIC KEY-----
+hidden-service-dir
+contact shadow-support@cs.umn.edu
+ntor-onion-key W7QKHChxv2OXt5smzKj4G7NTpBUsdrZNfTHXQRaQvSE=
+accept *:*
+router-signature
+-----BEGIN SIGNATURE-----
+KPIcQtETp7HlQP1lpy+1U+gNaSRB/vA//qVakd3KbAC1D2n+a+xIVtai7FLhJv1r
+JUzvqnuSQ8HlnjmcB3znTKbJVvBMPtv941cX1lpdkz0IbGG61RDUloZWG1CVAJuv
+CGmTU8nfxFCE+kSYqwSiR9UxXZihsDymjqQJLnh8d9A=
+-----END SIGNATURE-----
+@downloaded-at 1970-01-01 00:05:35
+@source "11.0.0.7"
+router relay2 11.0.0.4 9111 0 9112
+platform Tor 0.2.5.2-alpha on Linux
+protocols Link 1 2 Circuit 1
+published 1970-01-01 00:01:00
+fingerprint 533E 59F7 EF30 CBD1 3CD0 4D3D 0E67 63AE 491E 6788
+uptime 0
+bandwidth 1024000 1024000 1024000
+extra-info-digest 0CC9B4A78AC061037A28D2F15386B2089CBB389D
+onion-key
+-----BEGIN RSA PUBLIC KEY-----
+MIGJAoGBALA65Ga6dAdWu9WanSA7NjIFjYSCqSmAsfts+piw/oXSvJkmYE3haF2w
+DdAJzR/+QDTwbaraKYdADv1ppxqt2NcS1TP+05hNRMF53eWpBGtlt2jqZW1fzh7C
+2BGmDxDkEmQ0aX9dsgjyAwnI1BXjxpO43VPeLhh4y0lrv9gTDaTTAgMBAAE=
+-----END RSA PUBLIC KEY-----
+signing-key
+-----BEGIN RSA PUBLIC KEY-----
+MIGJAoGBALn9kx6cbguOUfVzDh818+hjdpk/hXblH2AZfVSVlnym+PjooFC64Y67
+2sD0YNlPPsISft/x83Xz1r5gDIpcm0qTTLiwNtTJcoo7IzrRTbCuB/pFHb0tB3n7
+dGirn9bp0hs5RkFYFA5bYFG8ZcmVpMKRLHC+TYug0vXrPq0vuhDpAgMBAAE=
+-----END RSA PUBLIC KEY-----
+hidden-service-dir
+contact shadow-support@cs.umn.edu
+ntor-onion-key 66MEj325aAeaHNjbIzEGFBgjBVnK4lUAWFujhk3MZno=
+reject *:*
+router-signature
+-----BEGIN SIGNATURE-----
+nSVKO3v4EFn74tewJQYa/7aBKZ02KcS8W/m4KO9LSOPwrGOroynKAl/Ra11fILH9
+fMch2PwUcRnUA2OjH8ywUycCzrgtNRmPjbfgLurctahaNp/qKYtQ61zN7SBLaNa6
+Xmyad+1j7cBdmpwYy3me3ddl69OVG/0SDefbkYvArAI=
+-----END SIGNATURE-----
+@downloaded-at 1970-01-01 00:11:56
+@source "11.0.0.7"
+router bridge 11.0.0.2 9111 0 0
+platform Tor 0.2.5.2-alpha on Linux
+protocols Link 1 2 Circuit 1
+published 1970-01-01 00:06:06
+fingerprint 62AC F7BE D7DF FEBD 88BC F2C3 0E6F B789 DEDB 99A7
+uptime 306
+bandwidth 1024000 1024000 1024000
+extra-info-digest DC42D8EA866E07774708111133AF238FE83505D0
+onion-key
+-----BEGIN RSA PUBLIC KEY-----
+MIGJAoGBALxNmjwxjTiU4TRhTI8XxyAV7R2/iNqFJTtMnVpBPeTSsNg+uw8PAEuE
+nbuH//ka7MrVZ96ASEt1B0NW7i8BsscPp72nhLIGLk/zXcjASXvkDS3mIQfBy/jn
+M9gqqfO9CF10I616r5aHq/DAbWyOc4gHF+3AWb075R3lLvG6ri7zAgMBAAE=
+-----END RSA PUBLIC KEY-----
+signing-key
+-----BEGIN RSA PUBLIC KEY-----
+MIGJAoGBANhYpanWz+pOfTe/cfiOJqIXBsMFrzbQ1TNemuDq42QL6meheED7LpM5
+bUtvvLJtdXUjziBVq8Yl6/woEyIV9Xi3FNB2N/fX2LnUPrMyMpvxfJ9UEeqpGIo7
++2QcLe7Sd+gyQSF3DRxTULl3S8/dUQn/KKyxA3NmKL4X0eay57LbAgMBAAE=
+-----END RSA PUBLIC KEY-----
+hidden-service-dir
+contact shadow-support@cs.umn.edu
+ntor-onion-key +2aEj0E80c23SvGuJhoCX5of9iUkroi2CB74G5vMplw=
+reject *:*
+router-signature
+-----BEGIN SIGNATURE-----
+eWRN3oRm62Iy4ES6ypTnQtXZNuOkET2PUeus/0LKVR3j6BWx+g+Lj5WWJinJjnFF
+5uulJNJ+Fxb06i0VMx2t9CDO+XVw9/CyzJKkj91wJcZNllbbEZP1pwfLhmGCawj6
+/BM9bSYdkKm40N1FcFMq4Y1W9BXzBjbUHLN1omJJ+tY=
+-----END SIGNATURE-----
