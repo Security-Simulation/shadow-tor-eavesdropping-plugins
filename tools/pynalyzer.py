@@ -109,10 +109,18 @@ def analyze(traceFilePath):
 
 if __name__ == '__main__':
 	#TODO: 
-	# - input args, 
 	# - lower threshold, 
 	# - sort lines list (if the user asks for it)
 	# - print dictionary as the scallion scripts
-	traceFilePath = TRACE_FILE
+
+	import sys
+
+	current_trace_file = TRACE_FILE;
+	if (len(sys.argv) > 1):
+		current_trace_file = sys.argv[1];
+	else:
+		print "Usage: " + sys.argv[0] + " <trace file>";
+		sys.exit(1);
+	traceFilePath = current_trace_file;
 	connections = analyze(traceFilePath)
 	print connections
