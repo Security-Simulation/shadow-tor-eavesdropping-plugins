@@ -121,6 +121,7 @@ if __name__ == '__main__':
 	else:
 		print "Usage: " + sys.argv[0] + " <trace file>";
 		sys.exit(1);
+	
 	traceFilePath = current_trace_file;
 	connections = analyze(traceFilePath)
 	print connections
