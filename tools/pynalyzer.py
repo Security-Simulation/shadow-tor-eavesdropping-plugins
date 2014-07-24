@@ -20,13 +20,17 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301,
 # USA. 
 
+import pickle
+import os
+import sys
+import getopt
+
 #Constants
 CLIENT = 0
 SERVER = 1
 
 #Global variables default values 
 THRESHOLD = 6000000000
-TRACE_FILE = "trace.log"
 
 def calcProb(time1, time2):
 	'''
@@ -107,21 +111,46 @@ def analyze(traceFilePath):
 	
 	return connections
 
+def exitUsage(appname, usage):
+	print appname + usage
+	sys.exit(2)
+
 if __name__ == '__main__':
 	#TODO: 
 	# - lower threshold, 
 	# - sort lines list (if the user asks for it)
 	# - print dictionary as the scallion scripts
 
-	import sys
+	exportFilePath = traceFilePath = ""
 
-	current_trace_file = TRACE_FILE;
-	if (len(sys.argv) > 1):
-		current_trace_file = sys.argv[1];
-	else:
-		print "Usage: " + sys.argv[0] + " <trace file>";
-		sys.exit(1);
+	usage = " --help --tracefile=<path> --exportfile=<path> --threshold=<MIN,MAX>"
 	
-	traceFilePath = current_trace_file;
+	try:
+		opts, args = getopt.getopt(sys.argv[1:], "ht:e:l:", 
+			["help","tracefile=","exportfile=", "threshold="])
+	except:
+		exitUsage(sys.argv[0], usage)
+	
+	for o, a in opts:
+		if o in ("-h", "--help"):
+			exitUsage(sys.argv[0], usage)
+		if o in ("-t", "--tracefile"):
+			traceFilePath = a
+		if o in ("-e", "--exportfile"):
+			exportFilePath = a
+		if o in ("-l", "--threshold"):
+			th = a.split(',')
+			THRESHOLD_MIN = th[0]
+			THRESHOLD_MAX = th[1]
+	
+	if not traceFilePath :
+		print "The tracefile is needed"
+		exitUsage(sys.argv[0], usage)
+
 	connections = analyze(traceFilePath)
-	print connections
+
+	# If the user wants to export the dictionary structure
+	if exportFilePath :
+		with open(exportFilePath, 'w') as f:
+			pickle.dump(connections, f)
+		print 'exported to "' + os.path.abspath(exportFilePath) + '" with pickle format.'
