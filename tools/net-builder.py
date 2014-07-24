@@ -22,7 +22,7 @@
 # USA.                                                                        #
 ###############################################################################
 
-# TODO : truly random topology, tracking, user interface and code-polishing
+# TODO : truly random topology, code-polishing
 
 import xml.etree.ElementTree as ET;
 import xml.dom.minidom as MD;
@@ -30,6 +30,8 @@ import random;
 
 DEFAULT_TOR_ARGS = "1024 --quiet --Address ${NODEID} --Nickname ${NODEID} --DataDirectory ./data/${NODEID} --GeoIPFile ~/.shadow/share/geoip --BandwidthRate 1024000 --BandwidthBurst 1024000 --ControlPort 9051";
 DEFAULT_TORCTL_ARGS = "localhost 9051 STREAM,CIRC,CIRC_MINOR,ORCONN,BW,STREAM_BW,CIRC_BW,CONN_BW,BUILDTIMEOUT_SET,CLIENTS_SEEN,GUARD,CELL_STATS,TB_EMPTY";
+DEFAULT_AUTOSYS_ARGS = "localhost:10000 localhost:9000 evil_analyzer:12345"
+DEFAULT_AUTOSYS_SERVER_ARGS = "any:80 localhost:8080 evil_analyzer:12345 server"
 
 default_topology_path = "~/.shadow/share/topology.graphml.xml"
 
@@ -101,7 +103,7 @@ class ScallionNetwork(object):
         tor_app.set("plugin", tor_id);
         tor_app.set("time", str(start_time));
 
-        argv = argv0 + ' ' + DEFAULT_TOR_ARGS + ' ' + "-f ./" + node.get("id") + ".torrc";
+        argv = argv0 + ' ' + DEFAULT_TOR_ARGS + ' ' + "-f ./" + argv0 + ".torrc";
 
         if (v3bandwidthsfile != ""):
             argv = argv + " --V3BandwidthsFile " + v3bandwidthsfile;
@@ -135,14 +137,14 @@ class ScallionNetwork(object):
         self.setup_tor(node, argv0, start_time=start_time, v3bandwidthsfile = v3bandwidthsfile);
 
 
-    def add_tor_4autority(self):
-        self.add_tor_control_node("4autority", "dirauth", v3bandwidthsfile = "./data/${NODEID}/dirauth.v3bw")
+    def add_tor_4authority(self, name="4authority"):
+        self.add_tor_control_node(name, "dirauth", v3bandwidthsfile = "./data/${NODEID}/dirauth.v3bw")
 
-    def add_tor_relay(self, quantity = 1):
-        self.add_tor_control_node("relay", "relay", quantity = quantity)
+    def add_tor_relay(self, quantity = 1, name="relay"):
+        self.add_tor_control_node(name, "relay", quantity = quantity)
 
-    def add_tor_exit(self, quantity = 1):
-        self.add_tor_control_node("exit", "exitrelay", quantity = quantity)
+    def add_tor_exit(self, quantity = 1, name="exit"):
+        self.add_tor_control_node(name, "exitrelay", quantity = quantity)
 
     def add_client(self, id_str, plugin, argv, quantity=1, tor=0, geocodehint = "Random",
                             start_time=1000, tracked = 0):
@@ -157,7 +159,7 @@ class ScallionNetwork(object):
             self.setup_tor(node, "client", start_time=start_time - 100);
 
         if (tracked):
-            self.setup_tor_tracker_proxy(node, start_time=start_time-1);
+            self.setup_tor_tracker_proxy(node, start_time=start_time-1, autosys_id="autosys");
 
         ctl_app = ET.SubElement(node, "application");
         ctl_app.set("plugin", plugin);
@@ -168,7 +170,7 @@ class ScallionNetwork(object):
     def add_server(self, id_str, plugin, argv, quantity=1, tor=0,
                             geocodehint = "Random",
                             start_time=10, tracked = 0):
-        self.serverpool.append("id_str")
+        self.serverpool.append(id_str)
         node = ET.SubElement(self.root, "node");
         node.set("id", id_str);
 
@@ -177,7 +179,7 @@ class ScallionNetwork(object):
             self.setup_tor(node, "client", start_time=start_time - 100);
 
         if (tracked):
-            self.setup_tor_tracker_proxy(node, start_time=start_time-1);
+            self.setup_tor_tracker_proxy(node, start_time=start_time-1, autosys_id="autosys", server=1);
 
         ctl_app = ET.SubElement(node, "application");
         ctl_app.set("plugin", plugin);
@@ -185,8 +187,17 @@ class ScallionNetwork(object):
         ctl_app.set("arguments", argv);
         self.set_geocode(node, geocodehint);
 
-    def setup_tor_tracker_proxy(self, node, start_time = 500):
-        pass
+    def setup_tor_tracker_proxy(self, node, start_time = 500, autosys_id="autosys", server=0):
+        autosys_app = ET.SubElement(node, "application");
+        autosys_app.set("plugin", autosys_id);
+        autosys_app.set("time", str(start_time));
+
+	if (not server):
+	        argv = DEFAULT_AUTOSYS_ARGS;
+	else:
+            argv = DEFAULT_AUTOSYS_SERVER_ARGS;
+
+        autosys_app.set("arguments", argv);
 
     def set_geocode(self, node, geocodehint = "Random"):
         if (not self.no_geohint):
@@ -197,27 +208,86 @@ class ScallionNetwork(object):
                 node.set("geocodehint", geocodehint);
 if __name__ == '__main__':
     from sys import argv;
+    import getopt, sys, random;
+
+    random.seed();
+
+    authorityn = 2;
+    relaysn = 20;
+    exitsn = 5;
+    clientsn = 100;
+    serversn = 30;
+
+    client_track_prob = 1.0;
+    server_track_prob = 1.0;
 
     random_topology = 0;
-    if (len(argv) > 1):
-        random_topology = int(argv[1]);
+    try:
+    	opts, args = getopt.getopt(sys.argv[1:], "hr:e:c:s:C:S:a:t",
+				   ["help","relays=","exits=","clients=","servers=",
+				    "clientprob=", "serverprob=", "authorityes=",
+  				    "random"]);
+    except:
+    	print sys.argv[0] + " --help --relays=N --exits=N --clients=N --servers=N --serverprob=float --clientprob=float --random";
+    	sys.exit(2);
+    for o, a in opts:
+    	if o in ("-h", "--help"):
+    		print sys.argv[0] + " --help --relays=N --exits=N --clients=N --servers=N --serverprob=float --clientprob=float";
+    		sys.exit(2);
+    	if o in ("-r", "--relays"):
+    		relaysn = int(a);
+    	if o in ("-e", "--exits"):
+    		exitsn = int(a);
+    	if o in ("-c", "--clients"):
+    		clientsn = int(a);
+    	if o in ("-C", "--clientprob"):
+    		client_track_prob = float(a);
+    	if o in ("-a", "--authorityes"):
+    		authorityn = int(a);
+
+    	if o in ("-s", "--servers"):
+    		serversn = int(a);
+    	if o in ("-S", "--serverprob"):
+    		server_track_prob = float(a);
+
+	if o in ("-t", "--random"):
+		randomtopology = 1
 
     sn = ScallionNetwork(killtime = 1800, random_topology = random_topology, no_geohint = 0);
 
     sn.add_plugin("filetransfer");
     sn.add_plugin("scallion");
     sn.add_plugin("torctl");
+    sn.add_plugin("autosys");
+    sn.add_plugin("analyzer");
 
+    sn.add_client("evil_analyzer", "analyzer", "any:12345 ./data/analyzer_trace.log");
     # tor structure
-    sn.add_tor_4autority();
-    sn.add_tor_relay(quantity = 3);
-    sn.add_tor_exit(quantity = 2);
+    for i in range(authorityn):
+            sn.add_tor_4authority(name="4uthority" + str(i+1));
 
-    sn.add_server("fileserver", "filetransfer",
-                  "server 80 ~/.shadow/share", tor = 0, tracked = 1);
+    for i in range(relaysn):
+	    sn.add_tor_relay(name="relay" + str(i));
+    for i in range(exitsn):
+	    sn.add_tor_exit(name="exit" + str(i));
 
-    sn.add_client("fileclient", "filetransfer", "client single "
+    for i in range(serversn):
+	    tracked = 0;
+	    r = random.randint(0, 100);
+	    if (float(r)/100.0 < float(server_track_prob)):
+		tracked = 1;
+
+    	    sn.add_server("fileserver" + str(i), "filetransfer",
+                  "server 8080 ~/.shadow/share", tor = 0, tracked = tracked);
+
+    for i in range(clientsn):
+	    tracked = 0;
+	    r = random.randint(0, 100);
+	    if (float(r)/100.0 < client_track_prob):
+		tracked = 1;
+	    sn.add_client("fileclient" + str(i), "filetransfer", "client single "
                   + random.choice(sn.serverpool) +
-                  " 80 localhost 9000 10 /1MiB.urnd", tor = 1, tracked = 1);
+                  " 80 localhost 10000 10 /1MiB.urnd", tor = 1, start_time = 1000+i*2,
+		   tracked = tracked);
 
     print sn
