@@ -30,7 +30,74 @@ CLIENT = 0
 SERVER = 1
 
 #Global variables default values 
-THRESHOLD = 6000000000
+THRESHOLD_MIN = 1000
+THRESHOLD_MAX = 6000000
+
+DEBUG = False
+
+def printDebug(string):
+	if DEBUG:
+		print string
+
+def printPretty(connections):
+	'''
+	Human readable print of connections dictionary
+	'''
+	for client in connections:
+		bestserver = bestCandidate(connections, client)
+		print (client + " best server: " + bestserver["id"] 
+			+ " avg: " + str(bestserver["avg"]))
+		
+		for conn in connections[client]:
+			print "\t" + str(conn['time'])
+			for sv in conn['servers']:
+				svData = conn['servers'][sv]
+				print "\t\t%d    %.3f    %s" % (svData[1], svData[0], sv)
+		
+		print ""
+
+def getAllServers(connections, client):
+	'''
+	Return all the server candidates for a certain client
+	'''
+	servers = {}
+	
+	for conn in connections[client]:
+		for sv in conn['servers']:
+			if sv not in servers:
+				servers[sv] = {}
+				servers[sv]['sum'] = 0
+				servers[sv]['avg'] = 0
+				servers[sv]['conns'] = []
+			server_data = {}
+			server_data['ctime'] = conn['time']
+			server_data['stime'] = conn['servers'][sv][1]
+			server_data['prob'] = conn['servers'][sv][0]
+			servers[sv]['conns'].append(server_data)
+			servers[sv]['sum'] += server_data['prob']
+	
+	for s in servers:
+		servers[s]['avg'] = servers[s]['sum'] / len(servers[s]['conns'])
+		printDebug("client: " + client + " server: " + s 
+			+ " avg: " + str(servers[s]['avg']))
+
+	return servers
+
+def bestCandidate(connections, client):
+	#TODO this can be directly done in getAllServers adding a 'best' key
+	# to the servers dictionary
+	'''
+	Get the best server candidate for a certain server
+	'''
+	best = {'avg' : -1}
+	first = True	
+	servers = getAllServers(connections, client)
+	for s in servers:
+		tmp_avg = servers[s]['avg']
+		if tmp_avg > best['avg']:
+			best['id'] = s
+			best['avg'] = tmp_avg
+	return best
 
 def calcProb(time1, time2):
 	'''
@@ -39,14 +106,16 @@ def calcProb(time1, time2):
 	connection timestamp and the time1 the client connection timestamp.
 	The probability is calculated in relation to the fixed THRESHOLD.
 	'''
-	if time1 > time2:
-		raise Exception("time2 must be bigger than time1")
-
 	timeDistance = time2 - time1
+	
+	if time1 > time2 or timeDistance <= THRESHOLD_MIN:
+		#Skip this server, it may probably be related to some other client
+		return False 
+	
 	prob = 0.0
 
-	if timeDistance <= THRESHOLD:		
-		prob = 1.0 - (float(timeDistance) / float(THRESHOLD))
+	if timeDistance <= THRESHOLD_MAX:		
+		prob = 1.0 - (float(timeDistance - THRESHOLD_MIN) / float(THRESHOLD_MAX))
 	
 	return prob 
 
@@ -77,11 +146,12 @@ def analyzeForward(startConn, startIdx, data):
 		servConn = connectionParams(j)
 		if servConn['side'] == SERVER:
 			prob = calcProb(startConn['time'], servConn['time'])
-			if prob == 0.0:
-				break #TODO: clean this with a while
+			if prob:
+				if prob <= 0.0:
+					break 
 		
-			if not servConn['hostname'] in servers:
-				servers[servConn['hostname']] = [prob, servConn['time']]
+				if not servConn['hostname'] in servers:
+					servers[servConn['hostname']] = [prob, servConn['time']]
 
 	return servers
 
@@ -117,17 +187,18 @@ def exitUsage(appname, usage):
 
 if __name__ == '__main__':
 	#TODO: 
-	# - lower threshold, 
 	# - sort lines list (if the user asks for it)
 	# - print dictionary as the scallion scripts
 
 	exportFilePath = traceFilePath = ""
+	dumpData = False
 
-	usage = " --help --tracefile=<path> --exportfile=<path> --threshold=<MIN,MAX>"
+	usage = (" --help --tracefile=<path> --exportfile=<path> " 
+				"--threshold=<MIN,MAX> --dump --debug")
 	
 	try:
-		opts, args = getopt.getopt(sys.argv[1:], "ht:e:l:", 
-			["help","tracefile=","exportfile=", "threshold="])
+		opts, args = getopt.getopt(sys.argv[1:], "ht:e:l:pd", 
+			["help","tracefile=","exportfile=", "threshold=", "dump", "debug"])
 	except:
 		exitUsage(sys.argv[0], usage)
 	
@@ -142,15 +213,27 @@ if __name__ == '__main__':
 			th = a.split(',')
 			THRESHOLD_MIN = th[0]
 			THRESHOLD_MAX = th[1]
+		if o in ("-p", "--dump"):
+			dumpData = True
+		if o in ("-d", "--debug"):
+			DEBUG = True
 	
-	if not traceFilePath :
+	if not traceFilePath:
 		print "The tracefile is needed"
 		exitUsage(sys.argv[0], usage)
 
 	connections = analyze(traceFilePath)
+	
+	if dumpData:
+		print connections
+	else:
+		printPretty(connections)
+
+	getAllServers(connections, 'client95')
 
 	# If the user wants to export the dictionary structure
 	if exportFilePath :
 		with open(exportFilePath, 'w') as f:
 			pickle.dump(connections, f)
-		print 'exported to "' + os.path.abspath(exportFilePath) + '" with pickle format.'
+		print ("exported to \"" + os.path.abspath(exportFilePath) 
+				+ "\" with pickle format.")
