@@ -24,6 +24,7 @@ import pickle
 import os
 import sys
 import getopt
+import operator
 
 #Constants
 CLIENT = 0
@@ -39,65 +40,99 @@ def printDebug(string):
 	if DEBUG:
 		print string
 
-def printPretty(connections):
+def printPretty(connections, clients_stat, real_stat):
 	'''
 	Human readable print of connections dictionary
 	'''
+	print "Threshold: <" + str(THRESHOLD_MIN) + "," + str(THRESHOLD_MAX) + ">"
+
+	print "\nEVALUATED STATS"
+	for client in clients_stat:
+		print(client + "\n\tcandidates")
+		for candidate in clients_stat[client]['candidates']:
+			
+			print ("\t\tN: %3d   AVG: %.3f    %s" % 
+				(candidate['nconns'], candidate['avg'], candidate['server'])),
+		
+			if candidate == clients_stat[client]['candidates'][0]:
+				print("*")
+			else:
+				print ""
+	
+	print "\nREAL STATS"
+	for client in real_stat:
+		print(client + "\n\tcandidates")
+		for candidate in real_stat[client]['candidates']:
+			
+			print ("\t\tN: %3d   %s\n" % 
+				(candidate['nconns'], candidate['server'])),
+		
+	#for client in connections:
+				
+		#for conn in connections[client]:
+		#	print "\t" + str(conn['time'])
+		#	for sv in conn['servers']:
+		#		svData = conn['servers'][sv]
+		#		print "\t\t%d    %.3f    %s" % (svData[1], svData[0], sv)
+		#
+		#print ""
+
+def candidateRankings(connections):
+	clients_stat = {}
+	
 	for client in connections:
-		bestserver = bestCandidate(connections, client)
-		print (client + " best server: " + bestserver["id"] 
-			+ " avg: " + str(bestserver["avg"]))
-		
-		for conn in connections[client]:
-			print "\t" + str(conn['time'])
-			for sv in conn['servers']:
-				svData = conn['servers'][sv]
-				print "\t\t%d    %.3f    %s" % (svData[1], svData[0], sv)
-		
-		print ""
+		servers = getAllServers(connections, client)
+		clients_stat[client] = {}
+		clients_stat[client]['candidates'] = []
+		for candidate in servers:
+			clients_stat[client]['candidates'].append({
+				'server' : candidate[0],
+				'nconns' : candidate[1]['nconns'],
+				'avg': candidate[1]['avg']
+			})
+	
+	return clients_stat
 
 def getAllServers(connections, client):
 	'''
 	Return all the server candidates for a certain client
+	sorterd in decreasing order based on the avg value 
+	(the first server will be the best candidate)
 	'''
 	servers = {}
+	servers_infos = {}
+	sorted_servers = []
 	
-	for conn in connections[client]:
-		for sv in conn['servers']:
-			if sv not in servers:
-				servers[sv] = {}
-				servers[sv]['sum'] = 0
-				servers[sv]['avg'] = 0
-				servers[sv]['conns'] = []
+	for cliconn in connections[client]:
+		for sv in cliconn['servers']:
+			if sv not in servers_infos:
+				servers_infos[sv] = {}
+				servers_infos[sv]['sum'] = 0
+				servers_infos[sv]['conns'] = []
 			server_data = {}
-			server_data['ctime'] = conn['time']
-			server_data['stime'] = conn['servers'][sv][1]
-			server_data['prob'] = conn['servers'][sv][0]
-			servers[sv]['conns'].append(server_data)
-			servers[sv]['sum'] += server_data['prob']
+			server_data['ctime'] = cliconn['time']
+			server_data['stime'] = cliconn['servers'][sv][1]
+			server_data['prob'] = cliconn['servers'][sv][0]
+			servers_infos[sv]['conns'].append(server_data)
+			servers_infos[sv]['sum'] += server_data['prob']
 	
-	for s in servers:
-		servers[s]['avg'] = servers[s]['sum'] / len(servers[s]['conns'])
-		printDebug("client: " + client + " server: " + s 
-			+ " avg: " + str(servers[s]['avg']))
+	for sv in servers_infos:
+		ssum = servers_infos[sv]['sum']
+		nconns = len(servers_infos[sv]['conns'])
+		servers[sv] = {}
+		servers[sv]['nconns'] = nconns
+		servers[sv]['avg'] = ssum / nconns
+		printDebug("client: " + client + " server: " + sv
+			+ " avg: " + str(servers[sv]['avg']))
+	
+	
+	sorted_servers = sorted(servers.items(), 
+		key = lambda x :x[1]['avg'], reverse = True)
+	
 
-	return servers
+	printDebug(sorted_servers)
 
-def bestCandidate(connections, client):
-	#TODO this can be directly done in getAllServers adding a 'best' key
-	# to the servers dictionary
-	'''
-	Get the best server candidate for a certain server
-	'''
-	best = {'avg' : -1}
-	first = True	
-	servers = getAllServers(connections, client)
-	for s in servers:
-		tmp_avg = servers[s]['avg']
-		if tmp_avg > best['avg']:
-			best['id'] = s
-			best['avg'] = tmp_avg
-	return best
+	return sorted_servers
 
 def calcProb(time1, time2):
 	'''
@@ -186,19 +221,16 @@ def exitUsage(appname, usage):
 	sys.exit(2)
 
 if __name__ == '__main__':
-	#TODO: 
-	# - sort lines list (if the user asks for it)
-	# - print dictionary as the scallion scripts
-
-	exportFilePath = traceFilePath = ""
+	importFilePath = traceFilePath = ""
+	connections = realConnection = clients_stat = real_stat = {}
 	dumpData = False
 
-	usage = (" --help --tracefile=<path> --exportfile=<path> " 
+	usage = (" --help --tracefile=<path> --importfile=<path> " 
 				"--threshold=<MIN,MAX> --dump --debug")
 	
 	try:
-		opts, args = getopt.getopt(sys.argv[1:], "ht:e:l:pd", 
-			["help","tracefile=","exportfile=", "threshold=", "dump", "debug"])
+		opts, args = getopt.getopt(sys.argv[1:], "ht:i:l:pd", 
+			["help","tracefile=","importfile=", "threshold=", "dump", "debug"])
 	except:
 		exitUsage(sys.argv[0], usage)
 	
@@ -207,12 +239,12 @@ if __name__ == '__main__':
 			exitUsage(sys.argv[0], usage)
 		if o in ("-t", "--tracefile"):
 			traceFilePath = a
-		if o in ("-e", "--exportfile"):
-			exportFilePath = a
+		if o in ("-i", "--importfile"):
+			importFilePath = a
 		if o in ("-l", "--threshold"):
 			th = a.split(',')
-			THRESHOLD_MIN = th[0]
-			THRESHOLD_MAX = th[1]
+			THRESHOLD_MIN = int(th[0])
+			THRESHOLD_MAX = int(th[1])
 		if o in ("-p", "--dump"):
 			dumpData = True
 		if o in ("-d", "--debug"):
@@ -224,16 +256,30 @@ if __name__ == '__main__':
 
 	connections = analyze(traceFilePath)
 	
+	clients_stat = candidateRankings(connections)
+
+		
+
+	# If the user wants to import the real connections data
+	if importFilePath :
+		with open(importFilePath, 'r') as f:
+			realConnections = pickle.load(f)
+		print ("imported from \"" + os.path.abspath(importFilePath) 
+				+ "\" with pickle format.")
+
+		#print realConnections
+		
+		for cli in realConnections:
+			real_stat[cli] = {}
+			real_stat[cli]['candidates'] = []
+			for sv in realConnections[cli]:
+				real_stat[cli]['candidates'].append({
+					'nconns' : len(realConnections[cli][sv]),
+					'server' : sv})
+
 	if dumpData:
 		print connections
 	else:
-		printPretty(connections)
+		printPretty(connections, clients_stat, real_stat)
 
-	getAllServers(connections, 'client95')
 
-	# If the user wants to export the dictionary structure
-	if exportFilePath :
-		with open(exportFilePath, 'w') as f:
-			pickle.dump(connections, f)
-		print ("exported to \"" + os.path.abspath(exportFilePath) 
-				+ "\" with pickle format.")

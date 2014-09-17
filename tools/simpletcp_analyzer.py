@@ -27,6 +27,21 @@ import os
 import pickle
 import getopt
 
+def printPretty(connections):
+	'''
+	Human readable print of connections dictionary
+	'''
+	for client in connections:
+		print client
+		
+		for server in connections[client]:
+			print ("\t " + server + " (" + str(len(connections[client][server]))
+				+ " connections)")
+			for conn in connections[client][server]:
+				print "\t\t " + str(conn)
+		
+		print ""
+
 def update(r, s, out):
     f = open(r + "/" + s);
     x = f.readline();
@@ -56,6 +71,7 @@ def main_parser(path):
 
 def exitUsage(a, u):
 	print a + " " + u;
+	sys.exit(2)	
 
 if __name__ == '__main__':
 
@@ -86,8 +102,10 @@ if __name__ == '__main__':
 
 	dumpout = main_parser(traceDirPath)
 	
-	if dumpData:
+	if dumpData:	
 		print dumpout
+	else:
+		printPretty(dumpout)
 
 	# If the user wants to export the dictionary structure
 	if exportFilePath :
