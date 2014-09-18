@@ -31,8 +31,8 @@ CLIENT = 0
 SERVER = 1
 
 #Global variables default values 
-THRESHOLD_MIN = 1000
-THRESHOLD_MAX = 6000000
+THRESHOLD_MIN = 100000  #100 ms
+THRESHOLD_MAX = 6000000 #6 s
 
 DEBUG = False
 
@@ -46,19 +46,6 @@ def printPretty(connections, clients_stat, real_stat):
 	'''
 	print "Threshold: <" + str(THRESHOLD_MIN) + "," + str(THRESHOLD_MAX) + ">"
 
-	print "\nEVALUATED STATS"
-	for client in clients_stat:
-		print(client + "\n\tcandidates")
-		for candidate in clients_stat[client]['candidates']:
-			
-			print ("\t\tN: %3d   AVG: %.3f    %s" % 
-				(candidate['nconns'], candidate['avg'], candidate['server'])),
-		
-			if candidate == clients_stat[client]['candidates'][0]:
-				print("*")
-			else:
-				print ""
-	
 	print "\nREAL STATS"
 	for client in real_stat:
 		print(client + "\n\tcandidates")
@@ -67,6 +54,14 @@ def printPretty(connections, clients_stat, real_stat):
 			print ("\t\tN: %3d   %s\n" % 
 				(candidate['nconns'], candidate['server'])),
 		
+	print "\nEVALUATED STATS"
+	for client in clients_stat:
+		print(client + " pmatch: %.3f \n\tcandidates" % clients_stat[client]['pmatch']) 
+		for candidate in clients_stat[client]['candidates']:
+			
+			print ("\t\tN: %3d   AVG: %.3f  %s\n" % 
+				(candidate['nconns'], candidate['avg'], candidate['server'])),
+	
 	#for client in connections:
 				
 		#for conn in connections[client]:
@@ -216,21 +211,51 @@ def analyze(traceFilePath):
 	
 	return connections
 
+def updateRealConnections(r, s, out):
+    f = open(r + "/" + s);
+    x = f.readline();
+
+    while (x != ""):
+        (key,val) = x[:-1].split(';');
+
+        try:
+            out[key][s].append(val);
+        except:
+            out[key] = {};
+            out[key][s] = [];
+            out[key][s].append(val);
+
+        x = f.readline();
+
+    f.close();
+
+
+def realConnectionsParser(path):
+    out = {}
+    for r,d,files in os.walk(path):
+        for f in files:
+            if (f[0:6] == "server"):
+                updateRealConnections(r, f, out);
+    return out;
+
+
 def exitUsage(appname, usage):
 	print appname + usage
 	sys.exit(2)
 
 if __name__ == '__main__':
-	importFilePath = traceFilePath = ""
+	traceDirPath = traceFilePath = ""
 	connections = realConnection = clients_stat = real_stat = {}
 	dumpData = False
+	pmatch = 0
 
-	usage = (" --help --tracefile=<path> --importfile=<path> " 
+	usage = (" --help --tracefile=<path> --tracedir=<path> " 
 				"--threshold=<MIN,MAX> --dump --debug")
 	
 	try:
-		opts, args = getopt.getopt(sys.argv[1:], "ht:i:l:pd", 
-			["help","tracefile=","importfile=", "threshold=", "dump", "debug"])
+		opts, args = getopt.getopt(sys.argv[1:], "ht:s:i:l:pd", 
+			["help","tracefile=","tracedir=","importfile=", 
+				"threshold=", "dump", "debug"])
 	except:
 		exitUsage(sys.argv[0], usage)
 	
@@ -239,8 +264,8 @@ if __name__ == '__main__':
 			exitUsage(sys.argv[0], usage)
 		if o in ("-t", "--tracefile"):
 			traceFilePath = a
-		if o in ("-i", "--importfile"):
-			importFilePath = a
+		if o in ("-s", "--tracedir"):
+			traceDirPath = a
 		if o in ("-l", "--threshold"):
 			th = a.split(',')
 			THRESHOLD_MIN = int(th[0])
@@ -261,13 +286,9 @@ if __name__ == '__main__':
 		
 
 	# If the user wants to import the real connections data
-	if importFilePath :
-		with open(importFilePath, 'r') as f:
-			realConnections = pickle.load(f)
-		print ("imported from \"" + os.path.abspath(importFilePath) 
-				+ "\" with pickle format.")
+	if traceDirPath :
 
-		#print realConnections
+		realConnections = realConnectionsParser(traceDirPath)
 		
 		for cli in realConnections:
 			real_stat[cli] = {}
@@ -277,9 +298,27 @@ if __name__ == '__main__':
 					'nconns' : len(realConnections[cli][sv]),
 					'server' : sv})
 
+		for eclient in clients_stat:
+			clients_stat[eclient]['pmatch'] = 0
+			#TODO: select realsv according to some policy
+			realsv = real_stat[eclient]['candidates'][0]
+
+			for sv in clients_stat[eclient]['candidates']:
+				if sv['server'] == realsv['server']:
+					p = (sv['avg'] * min(realsv['nconns'], sv['nconns']) / 
+							max(realsv['nconns'], sv['nconns']))
+					clients_stat[eclient]['pmatch'] = p
+
+			pmatch += clients_stat[eclient]['pmatch']
+
+	pmatch = pmatch / len(clients_stat)
+
+
+	
 	if dumpData:
 		print connections
 	else:
 		printPretty(connections, clients_stat, real_stat)
 
 
+	print "\nMatching probability %.3f \n" % (pmatch)
