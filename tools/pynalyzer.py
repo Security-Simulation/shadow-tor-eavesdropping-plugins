@@ -283,7 +283,7 @@ if __name__ == '__main__':
 	
 	clients_stat = candidateRankings(connections)
 
-		
+	n_clients = len(clients_stat)	
 
 	# If the user wants to import the real connections data
 	if traceDirPath :
@@ -299,8 +299,9 @@ if __name__ == '__main__':
 					'server' : sv})
 
 		for eclient in clients_stat:
-			clients_stat[eclient]['pmatch'] = 0
-			#TODO: select realsv according to some policy
+			clients_stat[eclient]['pmatch'] = -1
+			#TODO: select realsv according to some policy (the one with
+			# higher nconns 
 			realsv = real_stat[eclient]['candidates'][0]
 
 			for sv in clients_stat[eclient]['candidates']:
@@ -308,10 +309,13 @@ if __name__ == '__main__':
 					p = (sv['avg'] * min(realsv['nconns'], sv['nconns']) / 
 							max(realsv['nconns'], sv['nconns']))
 					clients_stat[eclient]['pmatch'] = p
+			
+			if clients_stat[eclient]['pmatch'] == -1:
+				n_clients -= 1
 
 			pmatch += clients_stat[eclient]['pmatch']
 
-	pmatch = pmatch / len(clients_stat)
+	pmatch = pmatch / n_clients
 
 
 	
