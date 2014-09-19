@@ -283,11 +283,11 @@ if __name__ == '__main__':
 	
 	clients_stat = candidateRankings(connections)
 
-	n_clients = len(clients_stat)	
-
+	print clients_stat
 	# If the user wants to import the real connections data
 	if traceDirPath :
 
+		n_clients = len(clients_stat)	
 		realConnections = realConnectionsParser(traceDirPath)
 		
 		for cli in realConnections:
@@ -312,12 +312,13 @@ if __name__ == '__main__':
 			
 			if clients_stat[eclient]['pmatch'] == -1:
 				n_clients -= 1
+			else:
+				pmatch += clients_stat[eclient]['pmatch']
+		print pmatch
+		print n_clients
+		pmatch = pmatch / float(n_clients)
 
-			pmatch += clients_stat[eclient]['pmatch']
-
-	pmatch = pmatch / n_clients
-
-
+	
 	
 	if dumpData:
 		print connections

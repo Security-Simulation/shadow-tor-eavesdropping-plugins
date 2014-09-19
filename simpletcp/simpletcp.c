@@ -164,7 +164,7 @@ static void _simpletcp_sleepCallback(SimpleTCP *h, unsigned int millisecs)
 }
 
 /* if option is specified, run as client, else run as server */
-static const char* USAGE = "Usage:" 
+static const char* USAGE = "usage:" 
 	"\tsimpletcp client proxyHostname:proxyPort serverHostname:serverPort "
 	"nConn [sleep_min,sleep_max](ms)\n"
 	"\tsimpletcp server bindHostname:bindPort logFolder\n";
@@ -185,9 +185,9 @@ static int _simpletcp_checkClientArgs(int argc, char **argv, int *retargs)
 		return -1;
 	
 	}
-	nconn = (int)strtol(argv[4], &tmp_end, 10);
-	if (nconn > INT_MAX || *tmp_end != '\0'){
-		return -1;
+	nconn = (int)atol(argv[4]);
+	if (nconn > INT_MAX){
+		return -2;
 	}
 	
 	if (argc > 5){
@@ -195,19 +195,19 @@ static int _simpletcp_checkClientArgs(int argc, char **argv, int *retargs)
 
 		split1 = strsep(&split2, ",");
 		if (split1 == NULL || split2 == NULL)
-			return -1;
+			return -3;
 
 		sleep_min = (int)strtol(split1, &tmp_end, 10);
 		if (errno != 0 || sleep_min > INT_MAX || *tmp_end != '\0')
-			return -1;
+			return -4;
 		
 		sleep_max = (int)strtol(split2, &tmp_end, 10);
 		if (errno != 0 || sleep_max > INT_MAX || *tmp_end != '\0')
-			return -1;
+			return -5;
 		
 		/* negative numbers obviously not allowed */
 		if (sleep_min < 0 || sleep_max < 0)
-			return -1;
+			return -6;
 	}
 
 	retargs[0] = nconn;
@@ -221,7 +221,7 @@ SimpleTCP* simpletcp_new(int argc, char* argv[], ShadowFunctionTable *shdlib)
 {
 	assert(shdlib);
 
-	int mode, res;
+	int mode, res, i;
 	int cliargs[3];
 	char *hostname, *proxy_hostname, *port, *proxy_port;
 	char *myhostname, *log_path;
@@ -230,16 +230,23 @@ SimpleTCP* simpletcp_new(int argc, char* argv[], ShadowFunctionTable *shdlib)
 
 	/* TODO: Is this random fair enogh? */
 	srand((unsigned)time(NULL));
-
-	if (argc < 3)
+	
+	if (argc < 3){
+		shdlib->log(SHADOW_LOG_LEVEL_WARNING, __FUNCTION__,
+					"not enough arguments");
 		_simpletcp_exitUsage(shdlib->log);
+	}
 			
 	if (strncmp(mode_str, "client", 6) == 0) {
 		mode = CLIENT;
 		res = _simpletcp_checkClientArgs(argc, argv, cliargs);
-		if (res == -1)
-			_simpletcp_exitUsage(shdlib->log);
 		
+		if (res < 0) {
+			shdlib->log(SHADOW_LOG_LEVEL_WARNING, __FUNCTION__,
+					"client args check fail with status: %d",
+					res);
+			_simpletcp_exitUsage(shdlib->log);
+		}	
 		asprintf(&tmp, "%s", argv[2]);
 		proxy_hostname = strsep(&tmp, ":");
 		proxy_port = tmp;
@@ -263,6 +270,8 @@ SimpleTCP* simpletcp_new(int argc, char* argv[], ShadowFunctionTable *shdlib)
 		
 		asprintf(&log_path, "%s", argv[3]);
 	} else {
+		shdlib->log(SHADOW_LOG_LEVEL_WARNING, __FUNCTION__,
+					"neither a server or a client");
 		_simpletcp_exitUsage(shdlib->log);
 	}
 
