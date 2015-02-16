@@ -1,0 +1,76 @@
+\documentclass[a4paper]{article}
+\usepackage[english]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{wrapfig}
+\usepackage{listings}
+\usepackage{float}
+\usepackage{bytefield}
+%\usepackage{fullpage}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{amsmath}
+%\usepackage[colorinlistoftodos]{todonotes}
+
+\title{Eavesdropping analysis over TOR networks}
+
+\author{Matteo Martelli, Davide Berardi}
+
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+In this document we talk about blablabla
+\end{abstract}
+
+\section{Introduction}
+Protecting data privacy on the Web is a very hot topic nowadays. 
+Users of the Web may want to surf without the risk that their personal
+informations can be read by other users. One of the most largely-used
+architecture for this purpose is the \emph{Onion Routing} and its
+protocol implementation: \emph{Tor}\cite{tor}. In fact, the latter is modeled with
+several techniques with the aim to provide communication security and
+data privacy to its network users. Anyway there have been recent papers
+ pointing out the Tor's vulnerabilities. %TODO ref these papers
+%TODO introduce time analyis and that also tor authors admit the
+%vulnerability. Introduce the simulation work, made to understand how
+%much Tor can be vulnerable
+
+\section{Onion Routing and Tor}
+
+\subsection{Tor architecture overview}
+
+\subsection{Tor attacks}
+
+\subsection{Eavesdropping}
+
+\section{Simulation}
+\subsection{Shadow}
+\subsection{Autosys plugin}
+\subsection{Analyzer plugin}
+\subsection{Simpletcp plugin}
+
+\section{Data Analysis}
+\subsection{Netbuilder Script}
+\subsection{Analyzer Script}
+\subsection{Empirical Results}
+
+\section{Conclusions}
+%TODO: diciamo che effettivamente sembra molto vulnerabile a time
+%analysis anche se  si dovrebbe provare con reti più grandi anche se "AS-awareness in Tor
+%path selection" dice che non cambia molto con la crescita della rete.
+%Loro propongono anche un algoritmo di selezione dei percorsi che
+%dovrebbe andar "meglio". Diamiogli un occhiata e in caso menzioniamolo. 
+
+\begin{thebibliography}{50}
+	\bibitem{tor}
+		R. Dingledine, N. Mathewson, and P. Syverson. 
+		Tor: the second-generation onion router. 
+		\textsl:{Proceedings of the 13th conference on USENIX Security Symposium}, 
+		pages 21–21, Berkeley, CA, USA, 2004.
+		USENIX Association.
+\end{thebibliography}
+\end{document}
