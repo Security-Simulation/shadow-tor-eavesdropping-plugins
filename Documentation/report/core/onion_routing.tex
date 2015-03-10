@@ -3,18 +3,27 @@
 Tor is an implementation of the onion routing architecture model. The
 onion routing consists in a technique that provides anonymous
 connections over a computer network\cite{or}.
-The connections exist in three phases:
-\begin{itemize}
-	\item \textbf{Connection Setup}: adflkgjdflkg
-	\item \textbf{Data Movement}: sfdsgdfgdf
-		\begin{figure}[H]
-			\centering
-			\includegraphics[scale=0.35]{onion.png}
-			%TODO\caption{Add caption for this figure}
-			\label{fig:onion}
-		\end{figure}	
-	\item \textbf{Connection Tear-Down}: sdfdjgl
-\end{itemize}
+This property is achieved closing the communication data stream through a
+chain of encryption steps. 
+
+The figure \ref{fig:onion} shows how a
+message is cyphered before the communication begins. The communication
+source, before sending the message, choses a communication path of nodes
+which the keys are known to the sender.
+Then the source node is able to create a stack of encryption starting
+with the key of the last relay node and then continuing backwards with
+the keys of the other relay nodes in the chain. In this way every node
+in the communication path can decrypt the package and read the next hop
+address. After that the final node receives the message, he can send the
+response back to the originator of the data stream. In this phase the response
+message is encrypted sequentially by each node in the chain. 
+%TODO:figure or-communication.png 
+\begin{figure}[H]
+	\centering
+	\includegraphics[scale=0.35]{onion.png}
+	\caption{Message encryption layers.}
+	\label{fig:onion}
+\end{figure}	
 
 \subsection{Tor architecture overview}
 %TODO protects you from traffic analysis
