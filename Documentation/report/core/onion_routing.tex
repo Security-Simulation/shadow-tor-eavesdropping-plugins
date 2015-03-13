@@ -2,7 +2,7 @@
 \label{sec:tor}
 Tor is an implementation of the onion routing architecture model. The
 onion routing consists in a technique that provides anonymous
-connections over a computer network\cite{or}.
+connections over a computer network\cite{goldschlag1999onion}.
 This property is achieved closing the communication data stream through a
 chain of encryption steps. 
 
@@ -17,17 +17,25 @@ in the communication path can decrypt the package and read the next hop
 address. After that the final node receives the message, he can send the
 response back to the originator of the data stream. In this phase the response
 message is encrypted sequentially by each node in the chain. 
-%TODO:figure or-communication.png 
+With this method each relay node can gain access to the
+previous and the next node addresses only. Anyway the last node of the
+Onion Routing path, called exit node, send the message to the end point
+as plain text.
+
 \begin{figure}[H]
 	\centering
-	\includegraphics[scale=0.35]{onion.png}
+	\includegraphics[scale=0.30]{onion.png}
 	\caption{Message encryption layers.}
 	\label{fig:onion}
+	\includegraphics[scale=0.30]{or-communication.png}
+	\caption{A two relay Onion Router communication.\cite{dingledine2004tor}}
 \end{figure}	
 
 \subsection{Tor architecture overview}
+
 %TODO protects you from traffic analysis
 %https://www.torproject.org/about/overview.html.en
+
 \subsection{Tor attacks}
 
 \subsection{Timing Attack}
