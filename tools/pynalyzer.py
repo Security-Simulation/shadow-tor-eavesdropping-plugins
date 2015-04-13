@@ -213,6 +213,7 @@ def analyze(traceFilePath):
 
 def updateRealConnections(r, s, out):
     f = open(r + "/" + s);
+    print r + "/" + s
     x = f.readline();
 
     while (x != ""):
@@ -247,7 +248,7 @@ if __name__ == '__main__':
 	traceDirPath = traceFilePath = ""
 	connections = realConnection = clients_stat = real_stat = {}
 	dumpData = False
-	pmatch = 0
+	rclients_missing = pmatch = 0
 
 	usage = (" --help --tracefile=<path> --tracedir=<path> " 
 				"--threshold=<MIN,MAX> --dump --debug")
@@ -300,18 +301,26 @@ if __name__ == '__main__':
 
 		for eclient in clients_stat:
 			clients_stat[eclient]['pmatch'] = -1
-			#TODO: select realsv according to some policy (the one with
-			# higher nconns 
-			realsv = real_stat[eclient]['candidates'][0]
+ 			
+			# Some problem occured if a logged connection does not appear 
+			# in the real connections
+			if not eclient in real_stat:
+				rclients_missing += 1
+			else :
+				#TODO: select realsv according to some policy (the one with
+				# highest nconns
+				realsv = real_stat[eclient]['candidates'][0]
 
-			for sv in clients_stat[eclient]['candidates']:
-				if sv['server'] == realsv['server']:
-					p = (sv['avg'] * min(realsv['nconns'], sv['nconns']) / 
-							max(realsv['nconns'], sv['nconns']))
-					clients_stat[eclient]['pmatch'] = p
+				for sv in clients_stat[eclient]['candidates']:
+					if sv['server'] == realsv['server']:
+						p = (sv['avg'] * min(realsv['nconns'], sv['nconns']) / 
+								max(realsv['nconns'], sv['nconns']))
+						clients_stat[eclient]['pmatch'] = p
 			
+			#unmatched clients
 			if clients_stat[eclient]['pmatch'] == -1:
-				n_clients -= 1
+				#n_clients -= 1
+				pass #XXX nop for debugging
 			else:
 				pmatch += clients_stat[eclient]['pmatch']
 		print pmatch
@@ -326,4 +335,5 @@ if __name__ == '__main__':
 		printPretty(connections, clients_stat, real_stat)
 
 
+	print "\nMissing client in the real stats: " rclients_missing
 	print "\nMatching probability %.3f \n" % (pmatch)
