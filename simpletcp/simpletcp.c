@@ -198,11 +198,11 @@ static int _simpletcp_checkClientArgs(int argc, char **argv, int *retargs)
 			return -3;
 
 		sleep_min = (int)strtol(split1, &tmp_end, 10);
-		if (errno != 0 || sleep_min > INT_MAX || *tmp_end != '\0')
+		if (sleep_min > INT_MAX || sleep_min < -1)
 			return -4;
 		
 		sleep_max = (int)strtol(split2, &tmp_end, 10);
-		if (errno != 0 || sleep_max > INT_MAX || *tmp_end != '\0')
+		if (sleep_max > INT_MAX || sleep_min > sleep_max)
 			return -5;
 		
 		/* negative numbers obviously not allowed */
@@ -261,8 +261,9 @@ SimpleTCP* simpletcp_new(int argc, char* argv[], ShadowFunctionTable *shdlib)
 
 	} else if (strncmp(mode_str, "server", 6) == 0) {
 		mode = SERVER;
-		if (argc < 4)
+		if (argc < 4) {
 			_simpletcp_exitUsage(shdlib->log);
+		}
 		
 		asprintf(&tmp, "%s", argv[2]);
 		hostname = strsep(&tmp, ":");
