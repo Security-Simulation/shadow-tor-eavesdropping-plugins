@@ -29,6 +29,12 @@
 #log files
 *.log
 
+#Tex compile files
+*.fdb_latexmk
+*.aux
+*.out
+*.sty
+
 #Existing plugins
 filetransfer
 scallion

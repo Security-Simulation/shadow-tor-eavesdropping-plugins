@@ -1,0 +1,31 @@
+\documentclass[a4paper]{article}
+\usepackage[english]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{wrapfig}
+\usepackage{listings}
+\usepackage{float}
+\usepackage{fullpage}
+
+\title{Timing Analysis Attack Simulation in Tor Networks}
+
+\author{Matteo Martelli, Davide Berardi}
+
+\date{\today}
+
+\begin{document}
+\nocite{*}
+\maketitle
+
+\input{core/abstract.tex}
+\input{core/intro.tex}
+\newpage
+\input{core/onion_routing.tex}
+\input{core/simulation.tex}
+\input{core/analisys.tex}
+\input{core/future.tex}
+\input{core/conclusions.tex}
+\bibliographystyle{plain}
+\bibliography{core/bibliog}
+\end{document}
