@@ -217,22 +217,23 @@ if __name__ == '__main__':
     exitsn = 5;
     clientsn = 100;
     serversn = 30;
+    density = 'average';
 
     client_track_prob = 1.0;
     server_track_prob = 1.0;
 
     random_topology = 0;
     try:
-    	opts, args = getopt.getopt(sys.argv[1:], "hr:e:c:s:C:S:a:t",
-				   ["help","relays=","exits=","clients=","servers=",
+    	opts, args = getopt.getopt(sys.argv[1:], "hD:r:e:c:s:C:S:a:t",
+				   ["help", "density=","relays=","exits=","clients=","servers=",
 				    "clientprob=", "serverprob=", "authorityes=",
   				    "random"]);
     except:
-    	print sys.argv[0] + " --help --relays=N --exits=N --clients=N --servers=N --serverprob=float --clientprob=float --random";
+    	print sys.argv[0] + " --help --density=[slow,average,fast] --relays=N --exits=N --clients=N --servers=N --serverprob=float --clientprob=float --random";
     	sys.exit(2);
     for o, a in opts:
     	if o in ("-h", "--help"):
-    		print sys.argv[0] + " --help --relays=N --exits=N --clients=N --servers=N --serverprob=float --clientprob=float";
+    		print sys.argv[0] + " --help --density=[slow,average,fast] --relays=N --exits=N --clients=N --servers=N --serverprob=float --clientprob=float";
     		sys.exit(2);
     	if o in ("-r", "--relays"):
     		relaysn = int(a);
@@ -249,19 +250,21 @@ if __name__ == '__main__':
     		serversn = int(a);
     	if o in ("-S", "--serverprob"):
     		server_track_prob = float(a);
+    	if o in ("-D", "--density"):
+    		density = a;
 
 	if o in ("-t", "--random"):
 		randomtopology = 1
 
-    sn = ScallionNetwork(killtime = 1800, random_topology = random_topology, no_geohint = 0);
+    sn = ScallionNetwork(killtime = 18000, random_topology = random_topology, no_geohint = 0);
 
-    sn.add_plugin("filetransfer");
+    sn.add_plugin("simpletcp");
     sn.add_plugin("scallion");
     sn.add_plugin("torctl");
     sn.add_plugin("autosys");
     sn.add_plugin("analyzer");
 
-    sn.add_client("evil_analyzer", "analyzer", "any:12345 ./data/analyzer_trace.log");
+    sn.add_client("evil_analyzer", "analyzer", "any:12345 ./data/analyzer_trace.log", start_time=600);
     # tor structure
     for i in range(authorityn):
             sn.add_tor_4authority(name="4uthority" + str(i+1));
@@ -277,17 +280,51 @@ if __name__ == '__main__':
 	    if (float(r)/100.0 < float(server_track_prob)):
 		tracked = 1;
 
-    	    sn.add_server("fileserver" + str(i), "filetransfer",
-                  "server 8080 ~/.shadow/share", tor = 0, tracked = tracked);
+	    if (tracked):
+	    	    sn.add_server("server" + str(i), "simpletcp",
+        	          "server any:8080 ./simpletcp", tor = 0, tracked = tracked);
+	    else:
+	    	    sn.add_server("server" + str(i), "simpletcp",
+        	          "server any:80 ./simpletcp", tor = 0, tracked = tracked);
 
     for i in range(clientsn):
 	    tracked = 0;
 	    r = random.randint(0, 100);
 	    if (float(r)/100.0 < client_track_prob):
 		tracked = 1;
-	    sn.add_client("fileclient" + str(i), "filetransfer", "client single "
-                  + random.choice(sn.serverpool) +
-                  " 80 localhost 10000 10 /1MiB.urnd", tor = 1, start_time = 1000+i*2,
-		   tracked = tracked);
+
+# gaussian-cut distribution
+# GIUSTIFICA STA ROBA NELLA RELAZIONE
+# SLOW
+	    if (density == 'slow'):
+		    randtime = int(random.gauss(800,40));
+		    randtime_end = int(random.gauss(2000,40));
+# AVERAGE
+	    if (density == 'average'):
+		    randtime = int(random.gauss(80,40));
+		    randtime_end = int(random.gauss(1000,40));
+# FAST
+	    if (density == 'fast'):
+		    randtime = int(random.gauss(20,40));
+		    randtime_end = int(random.gauss(100,40));
+	    
+            if (tracked):
+	    	sn.add_client("client" + str(i), "simpletcp", "client " +
+			"localhost:10000 "
+			 + random.choice(sn.serverpool) +
+			 ":80 " + str(int(random.uniform(1,100))) +
+			 " " + str(randtime) + "," + 
+			 str(randtime + randtime_end),
+			 tor = 1, start_time = 1400+i*2,
+			 tracked = tracked);
+            else:
+	    	sn.add_client("client" + str(i), "simpletcp", "client " +
+			"localhost:9000 "
+			 + random.choice(sn.serverpool) +
+			 ":80 " + str(random.randint(1,100)) +
+			 " " + str(randtime) + "," + 
+			 str(randtime + randtime_end),
+			 tor = 1, start_time = 1000+i*2,
+			 tracked = tracked);
 
     print sn

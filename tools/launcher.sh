@@ -11,9 +11,9 @@ division() {
 	echo "$1" "$2" | awk '{printf("%f", $1/$2)}';
 }
 
+date > /home/simul/finish.log;
 for i in `seq "$OUTTIMES"`; do
 
-	date > /home/simul/finish.log;
 	for j in `seq "$TIMES"`; do
 		for DENSITY in ${SPEEDS[@]}; do
 			rm $TMPDIR/* > /dev/null;
@@ -32,7 +32,7 @@ for i in `seq "$OUTTIMES"`; do
 				else
 					CLIENT_TRACE=1.0;
 				fi;
-				../net-builder.py -a 2 -r 10 -e 2 -c 2000 -s 10 -D $DENSITY -C $CLIENT_TRACE -S $SERVER_TRACE > shadow.config.xml;
+				/home/simul/shadow/src/plugins/tools/net-builder.py -a 2 -r 10 -e 2 -c 700 -s 10 -D $DENSITY -C $CLIENT_TRACE -S $SERVER_TRACE > shadow.config.xml;
 			else
 				cat /home/simul/tracelogs1/$j/$DENSITY/shadow.config.xml > shadow.config.xml;
 			fi;
@@ -47,9 +47,20 @@ for i in `seq "$OUTTIMES"`; do
 			rm /home/simul/tracelogs$i/$j/$DENSITY/* -rf;
 			cp shadow.config.xml /home/simul/tracelogs$i/$j/$DENSITY/.;
 			cp data/analyzer_trace.log /home/simul/tracelogs$i/$j/$DENSITY/.;
+#			cp data/scallion.log /home/simul/tracelogs$i/$j/$DENSITY/.;
 			cp simpletcp /home/simul/tracelogs$i/$j/$DENSITY/. -r;
 			popd;
 		done;
 	done;
-	date >> /home/simul/finish.log;
 done;
+
+date >> /home/simul/finish.log;
+
+TRACEDIRNAME=savelogs_$(date "+%F-%H-%M-%S")
+mkdir $TRACEDIRNAME
+mv tracelogs* $TRACEDIRNAME/.
+
+tar cvvf $TRACEDIRNAME.tar $TRACEDIRNAME
+
+rm -rf $TRACEDIRNAME
+xz $TRACEDIRNAME.tar
