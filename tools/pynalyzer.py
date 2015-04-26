@@ -335,5 +335,5 @@ if __name__ == '__main__':
 		printPretty(connections, clients_stat, real_stat)
 
 
-	print "\nMissing client in the real stats: " rclients_missing
+	print "\nMissing client in the real stats: " + str(rclients_missing)
 	print "\nMatching probability %.3f \n" % (pmatch)
