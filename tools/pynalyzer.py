@@ -319,15 +319,13 @@ if __name__ == '__main__':
 			
 			#unmatched clients
 			if clients_stat[eclient]['pmatch'] == -1:
-				#n_clients -= 1
-				pass #XXX nop for debugging
+				n_clients -= 1 #do not consider unmatched clients
+				#pass #XXX nop for debugging
 			else:
 				pmatch += clients_stat[eclient]['pmatch']
 		print pmatch
 		print n_clients
 		pmatch = pmatch / float(n_clients)
-
-	
 	
 	if dumpData:
 		print connections
