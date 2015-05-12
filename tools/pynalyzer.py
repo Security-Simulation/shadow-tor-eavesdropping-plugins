@@ -25,6 +25,7 @@ import os
 import sys
 import getopt
 import operator
+import time
 
 #Constants
 CLIENT = 0
@@ -174,10 +175,13 @@ def analyzeForward(startConn, startIdx, data):
 	servers = {}
 	for j in data[startIdx:]:
 		servConn = connectionParams(j)
+                #break the loop if the window is outside the threshold window
+                if servConn['time'] - startConn['time'] > THRESHOLD_MAX:
+                    break
 		if servConn['side'] == SERVER:
 			prob = calcProb(startConn['time'], servConn['time'])
 			if prob:
-				if prob <= 0.0:
+				if prob <= 0.0: #sanity check (just in case shit happens)
 					break 
 		
 				if not servConn['hostname'] in servers:
@@ -194,11 +198,16 @@ def analyze(traceFilePath):
 	candidates for that connection, scanning the connections 
 	list moving forward in time (analyzeForward).
 	'''
+        ith = 0
 	connections = {} 
 	traceFile = open(traceFilePath)
 	data = traceFile.readlines()
 	traceFile.close()
+        
+        printDebug("Analisis started")
 	for i in data:
+                ith += 1
+                printDebug('%3.2f' % ((float(ith)/float(len(data)) * 100)))
 		startConn = connectionParams(i)			
 		if startConn['side'] == CLIENT:	
 			if not startConn['hostname'] in connections:
@@ -208,7 +217,7 @@ def analyze(traceFilePath):
 			conn['servers'] = analyzeForward(startConn, 
 				data.index(i) + 1, data)
 			connections[startConn['hostname']].append(conn)
-	
+        printDebug("Analisis finished")	
 	return connections
 
 def updateRealConnections(r, s, out):
@@ -248,7 +257,7 @@ if __name__ == '__main__':
 	traceDirPath = traceFilePath = ""
 	connections = realConnection = clients_stat = real_stat = {}
 	dumpData = False
-	rclients_missing = pmatch = 0
+	rclients_missing = pmatch = n_clients = matched_clients = 0
 
 	usage = (" --help --tracefile=<path> --tracedir=<path> " 
 				"--threshold=<MIN,MAX> --dump --debug")
@@ -317,21 +326,22 @@ if __name__ == '__main__':
 								max(realsv['nconns'], sv['nconns']))
 						clients_stat[eclient]['pmatch'] = p
 			
-			#unmatched clients
-			if clients_stat[eclient]['pmatch'] == -1:
-				n_clients -= 1 #do not consider unmatched clients
-				#pass #XXX nop for debugging
-			else:
+			#matched client
+			if clients_stat[eclient]['pmatch'] != -1:
+                                matched_clients += 1
 				pmatch += clients_stat[eclient]['pmatch']
-		print pmatch
-		print n_clients
-		pmatch = pmatch / float(n_clients)
-	
+		#print pmatch
+		#print n_client
+                if matched_clients > 0:
+                    pmatch = pmatch / float(matched_clients)
+	    
 	if dumpData:
 		print connections
 	else:
 		printPretty(connections, clients_stat, real_stat)
 
+        matchedPercent = (matched_clients / n_clients) * 100
 
 	print "\nMissing client in the real stats: " + str(rclients_missing)
-	print "\nMatching probability %.3f \n" % (pmatch)
+        print ("\nMatched %d\% clients of %d totals with a"
+                "matching probability of %.3f \n" % (matchedPercent, pmatch))
