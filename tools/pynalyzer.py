@@ -257,8 +257,8 @@ if __name__ == '__main__':
 	traceDirPath = traceFilePath = ""
 	connections = realConnection = clients_stat = real_stat = {}
 	dumpData = False
-	rclients_missing = pmatch = n_clients = matched_clients = 0
-
+	rclients_missing = n_clients = matched_clients = 0
+        matched_portion = pmatch = 0.0
 	usage = (" --help --tracefile=<path> --tracedir=<path> " 
 				"--threshold=<MIN,MAX> --dump --debug")
 	
@@ -340,8 +340,13 @@ if __name__ == '__main__':
 	else:
 		printPretty(connections, clients_stat, real_stat)
 
-        matchedPercent = (matched_clients / n_clients) * 100
+        if matched_clients > 0:
+            matched_portion = matched_clients / float(n_clients)
 
 	print "\nMissing client in the real stats: " + str(rclients_missing)
-        print ("\nMatched %d\% clients of %d totals with a"
-                "matching probability of %.3f \n" % (matchedPercent, pmatch))
+        print ("\nMatched %f clients of %d totals with a"
+                "matching probability of %.3f \n" % (matched_portion, n_clients, pmatch))
+        
+        
+        print ("missing:%d;matched:%d;n_traced_clients:%d;matched_portion:%f;pmatch:%f\n" % 
+            (rclients_missing, matched_clients, n_clients, matched_portion, pmatch))
