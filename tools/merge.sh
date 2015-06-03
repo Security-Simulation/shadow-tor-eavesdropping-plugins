@@ -2,9 +2,9 @@
 
 merged=""
 for i in $(ls) ; do 
-	if pushd $i > "/dev/null"; then
+	if test -d $i && pushd $i > "/dev/null"; then
 		for j in $(ls) ; do 
-			if pushd $j > "/dev/null" ; then
+			if test -d $j  && pushd $j > "/dev/null" ; then
 				traced_info=`cat shadow.config.xml | egrep '<application[[:blank:]]+'|egrep 'plugin="autosys"'`
 				straced=`echo "$traced_info" | egrep 'arguments="[^"]*server[^"]*"'|wc -l`
 				ctraced=`echo "$traced_info" | egrep -v 'arguments="[^"]*server[^"]*"'|wc -l`
@@ -13,9 +13,7 @@ for i in $(ls) ; do
 				realservers=`echo "$real_info" | egrep 'arguments="[[:blank:]]*server[^"]*"'|wc -l`
 				realclients=`echo "$real_info" | egrep 'arguments="[[:blank:]]*client[^"]*"'|wc -l`
 
-				echo "TEST: $realservers $realclients $straced $ctraced"
-
-				merged="$merged"$'\n'"idx:$i,$j;$(tail -n 2 pynalyzer.log);real_clients:$realclients;real_traced_clients:$ctraced;real_servers:$realservers;real_traced_servers:$straced"
+				merged="$merged""idx:$i;density:$j;$(tail -n 2 pynalyzer.log);real_clients:$realclients;traced_clients:$ctraced;real_servers:$realservers;traced_servers:$straced\n"
 				popd > "/dev/null" 
 			fi
 		done
@@ -23,4 +21,5 @@ for i in $(ls) ; do
 	fi
 done 
 
-echo "$merged"
+
+echo -e "$merged" | sed 's/:/ /g; s/;/ /g' | sort -k 2n
