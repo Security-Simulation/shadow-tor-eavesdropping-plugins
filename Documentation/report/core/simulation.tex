@@ -6,11 +6,43 @@ We wanted to model the scenario in a way that most of the
 characteristics of the Tor network architecture would have been
 considered.
 
-The shadow simulator seemed to be a good candidate for our purpose. In
+The \textbf{shadow simulator}\cite{shadowoverview} seemed to be a good candidate for our purpose. In
 the next paragraphs we will introduce shadow and we will illustrate our
 work based on this simulator.
  
 \subsection{Shadow}
+Most of the simulators used for networks experimentation do not provide
+the use of third-party already existent applications, which their
+behaviour are often simulated as well. 
+This approach can be reasonable if the analysis is focused on the 
+network layers below the application layer. 
+
+In our case we are interested in studying the characteristic of the Tor
+network and the Tor application installed inside the Tor network nodes.
+The latter is one of the core part of the Tor architecture as it implements the
+onion routing protocol that let the Tor nodes communicate. More
+specifically the Tor application daemons communicate each others on the 
+top of the current internet network layers (TCP/IP). Above the internet
+network layers an ulterior network stack is used by the standard web applications 
+(e.g. browser, web servers, etc.) whose communications packets are
+tunneled through the Tor network layers by the Tor applications.
+
+It is evident that the Tor application has a significant role in
+the Tor architecture, thus we chose the shadow simulator as it permits
+the use of the real Tor applications in a simulated environment.
+Essentially it allows the execution of a set of local applications that
+communicates in a simulated computer network.
+
+Applications are executed inside the shadow simulator through 
+dynamic libraries called plugins. 
+These plugins are interfaces used by shadow to trace a
+selective set of system calls and re-route them to the simulator instead
+of letting them proceed directly to the kernel. 
+In this way, the simulator is transparent to the application
+that may function as like it was running in a standard UNIX environment. 
+
+%TODO: introduce scallion and the other plugins and find some pictures
+
 \subsection{Autosys plugin}
 \subsection{Analyzer plugin}
 \subsection{Simpletcp plugin}
