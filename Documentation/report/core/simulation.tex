@@ -6,13 +6,13 @@ We wanted to model the scenario in a way that most of the
 characteristics of the Tor network architecture would have been
 considered.
 
-The \textbf{shadow simulator}\cite{shadowoverview} seemed to be a good candidate for our purpose. In
+The \textbf{shadow simulator}\cite{shadow} seemed to be a good candidate for our purpose. In
 the next paragraphs we will introduce shadow and we will illustrate our
 work based on this simulator.
  
 \subsection{Shadow}
 Most of the simulators used for networks experimentation do not provide
-the use of third-party already existent applications, which their
+the use of real external applications, which their
 behaviour are often simulated as well. 
 This approach can be reasonable if the analysis is focused on the 
 network layers below the application layer. 
@@ -34,15 +34,33 @@ Essentially it allows the execution of a set of local applications that
 communicates in a simulated computer network.
 
 Applications are executed inside the shadow simulator through 
-dynamic libraries called plugins. 
-These plugins are interfaces used by shadow to trace a
+dynamic libraries called plug-ins. 
+These plug-ins are interfaces used by shadow to trace a
 selective set of system calls and re-route them to the simulator instead
 of letting them proceed directly to the kernel. 
 In this way, the simulator is transparent to the application
 that may function as like it was running in a standard UNIX environment. 
 
-%TODO: introduce scallion and the other plugins and find some pictures
+The plug-in that allows the execution of the Tor applications is
+scallion. The latter provides also some useful tools for the virtual
+Tor network topology generation.
 
-\subsection{Autosys plugin}
-\subsection{Analyzer plugin}
-\subsection{Simpletcp plugin}
+The virtual network is modeled with a XML configuration
+file, called blueprint, used by shadow to understand the network
+structure and some network properties such as link latency, jitter and
+packet loss rate. The blueprint also tells Shadow what software each
+virtual node should run at its creation. This is specified with a
+plug-ins list for each virtual node entry of the XML file.
+
+We implemented three shadow plug-ins and their relative applications 
+ able to work alongside scallion in
+order to experiment a time analysis attack scenario. Our plug-ins and
+the attack scenario will be illustrated in the next paragraphs.
+
+%TODO: find some pictures
+\subsection{Simulation Scenario}
+%TODO: un bello schema con i nodi e i relativi plug-in
+
+\subsection{Autosys plug-in}
+\subsection{Analyzer plug-in}
+\subsection{Simpletcp plug-in}
