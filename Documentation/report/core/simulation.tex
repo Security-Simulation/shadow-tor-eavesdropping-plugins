@@ -18,25 +18,22 @@ This approach can be reasonable if the analysis is focused on the
 network layers below the application layer. 
 
 In our case we are interested in studying the characteristic of the Tor
-network and the Tor application installed inside the Tor network nodes.
-The latter is one of the core part of the Tor architecture as it implements the
-onion routing protocol that let the Tor nodes communicate. More
-specifically the Tor application daemons communicate each others on the 
-top of the current internet network layers (TCP/IP). Above the internet
-network layers an ulterior network stack is used by the standard web applications 
-(e.g. browser, web servers, etc.) whose communications packets are
-tunneled through the Tor network layers by the Tor applications.
+network which is based on the network application layer.
+Thus the Tor application is one of the core part of the Tor architecture as it implements the
+onion routing protocol that let the Tor nodes communicate each others.
 
 It is evident that the Tor application has a significant role in
 the Tor architecture, thus we chose the shadow simulator as it permits
 the use of the real Tor applications in a simulated environment.
 Essentially it allows the execution of a set of local applications that
-communicates in a simulated computer network.
+communicates in a simulated computer network. Moreover we could
+avoid the oversimplification of the system that could have been occurred
+with a custom implementation.
 
 Applications are executed inside the shadow simulator through 
 dynamic libraries called plug-ins. 
 These plug-ins are interfaces used by shadow to trace a
-selective set of system calls and re-route them to the simulator instead
+selective set of system functions and re-route them to the simulator instead
 of letting them proceed directly to the kernel. 
 In this way, the simulator is transparent to the application
 that may function as like it was running in a standard UNIX environment. 
@@ -61,38 +58,48 @@ the attack scenario will be illustrated in the next paragraphs.
 \subsection{Simulation Scenario}
 %TODO: un bello schema con i nodi e i relativi plug-in
 
-\subsection{Autosys plugin}
-To analyze the tor network traffic we need, at least, some informations about
+\subsection{Autosys plug-in}
+To analyze the tor network traffic we need, at least, some information about
 the incoming and the outgoing connections.\\
-To achieve that result we have more than a solution, we can place a connection
-listener in the last network element under the control of an autonomous system\footnote{
-That the reason why the plugin is called "Autosys".} tracing a whole subset of
-network nodes.
-Or we can place the listener in a, malware-like, invisible proxy on the target
-machine tracing every outgoing connection, we also need to place an exit tracer on the other end.
-This proxy can be implemented in some different ways, one of the bests solutions can be
-a simple raw-socket based sniffer, unfortunately Shadow doesn't support raw-socket
+To achieve this result we have more than a solution: in the first one we can place 
+in the last network element that is under the control of an autonomous system\footnote{
+That the reason why the plug-in is called "Autosys".} a connection
+listener which traces a whole subset of
+network nodes;
+otherwise we can place the listener in a, malware-like, invisible proxy on the target
+machine with the aim to trace every outgoing connection. 
+In both solutions we need to place some correspondent exit tracers on
+the target end points.
+This proxies can be implemented as a simple raw-socket based sniffer. 
+Unfortunately Shadow doesn't support raw-socket
 % XXX QUA MAGARI CI METTIAMO LA FONTE
-emulation, so the plugin was implemented as a simple event based TCP proxy interposed
-between the client/server application and the Tor entry/exit guard.
+emulation, so we implemented the plug-in as a simple event based TCP
+proxy. In our attack scenario an instance of the autosys plug-in is placed 
+between the client application and the client Tor daemon, also a second
+ instance is placed between the server Tor daemon and the server application.
 \\
 % Qua possiamo mettere un'immagine che spiega il tutto
+% scrivi algoritmo
 
 % XXX FORSE DA SPOSTARE IN ANALYZER
-When some connection initiator packets flows trough the proxy the current time
-is sent to the analysis server
+When some connection initiator packets flow trough the proxy, the
+current machine time of day is sent to the analysis server
 % DA CONTROLLARE FOOTNOTE
-\footnote{The simulator have a single clock, so we don't have problem with the
-clock syncronization.}.
+\footnote{The simulator have a single clock, so we don't have any problem with the
+clock synchronization.}.
 % Altra immagine
 
-\subsection{Analyzer plugin}
-The data sniffed by the autosys plugin need to be stored in a place to be
-analyzed later, to do so we need another plugin.
-This plugin is called the "Analyzer plugin" or the "Analysis server" this server
-will so act to collect all the deadrops generated by the sniffers.
-The plugin is implemented as a simple event driven UDP server, every packet
-received from the sniffer plugin is so saved in a single place.
+\subsection{Analyzer plug-in}
+Data sniffed by the autosys plug-in need to be stored for later analysis, 
+to do so we need another plug-in.
+This plug-in is called the "Analyzer plug-in" or the "Analysis server"
+which will collect all the dead-drops generated by the sniffers.
+The plug-in is implemented as a simple event driven UDP server, every
+packet received from the sniffer plug-in is so saved in a single place.
+% TODO show the packet structure 
+% footnote con spiegazione perdita pacchetti 
+% dire che sta roba viene analizzata da pynalyzer
 % immagine con il salvataggio
 
-\subsection{Simpletcp plugin}
+\subsection{Simpletcp plug-in}
+% spiegare socks
