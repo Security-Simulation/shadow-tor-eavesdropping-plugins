@@ -165,7 +165,35 @@ The time-stamp of the packet (when it flows trough the autosys plug-in).
 \end{itemize}
 
 In conclusion this raw data will be passed to the phase two to be analyzed by the scripts.\\
-% immagine con il salvataggio
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[scale=2]
+\node (internet) [cloud, draw, thick, fill=red!20!blue!20!green!20] {Net};
+\node (analysis) [rectangle, draw, thick, rounded corners=3pt, text width = 100pt, below= 1cm of internet, fill=yellow!50] {Logger};
+
+\pic(disc2) [
+	draw,
+	below = 1.7cm of analysis,
+	scale = 0.5
+] {disc};
+\pic(disc1) [
+	draw,
+	below = 1.1cm of analysis,
+	scale = 0.5
+] {disc};
+\pic(disc0) [
+	draw,
+	below = 0.5cm of analysis,
+	scale = 0.5
+] {disc};
+
+
+\draw [thick, color=red]   (internet) -- node [right]{Tracker packet} (analysis);
+\draw [thick, color=red]   (analysis) -- (0,-1.37);
+\end{tikzpicture}
+\caption {Logger logic structure.}
+\label{fig:autosys_diagram}
+\end{figure}
 
 As a subnote this plug-in was implemented as an UDP server for the sake of
 simplicity and, in opposite to TCP, the low impact on the network.\\
@@ -173,4 +201,5 @@ This can lend us to a little packet-loss but won't impact too much on the time a
 as we will see later on this study.
 
 \subsection{Simpletcp plug-in}
-% spiegare socks
+The last plug-in that we implemented emulate a simple HTTP client/server communication.
+% TODO : scrivi + socks
