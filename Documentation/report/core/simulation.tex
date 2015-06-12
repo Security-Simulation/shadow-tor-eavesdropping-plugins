@@ -202,4 +202,26 @@ as we will see later on this study.
 
 \subsection{Simpletcp plug-in}
 The last plug-in that we implemented emulate a simple HTTP client/server communication.
-% TODO : scrivi + socks
+\subsubsection {Client mode}
+This plug-in, in client mode, emulate the communication making some (a customizable amount)
+connections to the server
+with a random normal distribute sleep time in between of every connection
+(this parameter is configurable too).\\
+The packet transfered by the plug-in simply contains the host-name of the
+host machine, this is to break the anonymity of the TOR system and analyze the results
+in later phases.\\
+\subsubsection {Server mode}
+At the opposite end, a server simpletcp instance, will:
+\begin{itemize}
+	\item Receive the connection packets from the clients.
+	\item Add a time-stamp to the current received packet.
+	\item Save the packet to a common file (in our implementation this data
+	file is called as the host-name of the machine hosting the server).
+	This is used in the analysis of the phase 2, to compute a matching probability
+	between the guessed users and the real users.
+\end{itemize}
+
+% Qui ci va un diagramma temporale con la comunicazione di TOR
+
+\subsubsection {SOCKS5 operation}
+% TODO!
