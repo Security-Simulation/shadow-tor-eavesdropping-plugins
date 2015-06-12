@@ -57,7 +57,61 @@ the attack scenario will be illustrated in the next paragraphs.
 %TODO: find some pictures
 \subsection{Simulation Scenario}
 %TODO: un bello schema con i nodi e i relativi plug-in
+\begin{figure}[H]
+    \centering
+    \includegraphics[scale=0.33]{scenario.png}
+    \caption{Time analysis attack simulation scenario.}
+    \label{fig:scenario}
+\end{figure}
 
+The figure \ref{fig:scenario} shows an outline of the simulation
+scenario. More specifically the considered identities of the scenario are:
+\begin{itemize} 
+	\item \textbf{Servers}, that represent usual application servers.
+They listen on some TCP port waiting for connection requests.
+	\item \textbf{Clients}, that represent usual application clients.
+They try to initialize TCP connections with some servers through the
+destination port the target servers are listening to.
+	\item \textbf{Tor nodes}, that form Tor communication paths. They
+compose the Tor network.
+	\item \textbf{Logger server}, that is a simple server whose read
+and store incoming UDP status messages.
+\end{itemize}
+
+Furthermore, clients and servers communicate each others at the application layer
+through an ad-hoc application we built, \textbf{simple-tcp}. As the
+application name itself suggests, simple-tcp permits clients to
+establish simple TCP connections with servers. Also, simple-tcp is used
+by clients to send their own IP address to the servers in the TCP
+messages payload.
+In this way servers can log some information about the incoming connections:
+specifically they store source IP address,
+destination IP address and time of day related to them. 
+This feature is not intended to be used by an attacker but
+we will see in the paragraph \ref{subsec:simpletcp} how
+it is useful in the analysis process. Anyway, from the attacker point of
+view, simple-tcp tries to behave like an usual web-application,
+simulating a sequence of TCP connections interchange between clients and
+servers. 
+
+In our scenario all the TCP connections pass through the Tor
+nodes as we are not interested in the traffic outside the Tor network. 
+This is legitimated considering our purpose of testing the feasibility of a time analysis
+attack in Tor and considering that the internet traffic coming from
+outside Tor could be filtered by the attacker's tracer
+software\footnote{The Tor exit nodes list is public\cite{toroverview}.}, avoiding in this
+way unwanted data interference.
+
+\textbf{Autosys} is a tracer application installed on both clients and
+servers which are interesting for an attacker.  
+In short, when autosys discover an outgoing connection from the
+hosting client, it sends to a logger server the client IP address and
+the current time of day. Doing the same when it discovers incoming
+connections in the server side, autosys may let the attacker relate outgoing
+clients connections 
+ to incoming server connections. We will see in the next
+paragraph how this application can be used to simulate a time analysis
+attack.
 \subsection{Autosys plug-in}
 To analyze the tor network traffic we need, at least, some information about
 the incoming and the outgoing connections.\\
@@ -173,4 +227,5 @@ This can lend us to a little packet-loss but won't impact too much on the time a
 as we will see later on this study.
 
 \subsection{Simpletcp plug-in}
+\label{subsec:simpletcp}
 % spiegare socks
