@@ -1,4 +1,67 @@
 \section{Data Analysis}
 \subsection{Netbuilder Script}
 \subsection{Analyzer Script}
+The analyzer script takes a log file, generated previously by the logger
+server, as input and tries to
+ascertain which clients were communicating with which server during the
+simulation. The log file is a list of entries that are formatted as described in
+ figure \ref{fig:analyzer_pack_struct} and the figure
+\ref{fig:example_log_file} shows an example of it.
+\begin{figure}[H]
+\centering
+\begin{lstlisting}[language=bash,frame=single]
+...
+c;client3;1414557713
+c;client5;1414847666
+s;server3;1415099735
+c;client3;1415390384
+c;client5;1415536475
+c;client7;1415618044
+s;server3;1415788544
+c;client0;1415817129
+s;server2;1416118377
+...
+\end{lstlisting}
+\caption{Analyzer log file fragment example.}
+\label{fig:example_log_file}
+\end{figure}
+The script scans the log file and for each line check whatever the entry is
+related to a client or a server. If the entry refers to a client
+connection request it scans in a nestled loop the server connection entries
+that may be related to that client. The nested loop does not scan the whole
+file until its end, but it stops after a sufficient amount of
+read entries. In particular, the amount of entries to be read is
+measured in time: from a client entry, the scan process goes
+ahead until the difference between the time-stamp of the current scanned 
+entry and the time-stamp of the starting client entry is not greater
+than a fixed threshold $thr_{max}$. For our experiment we chose a limit of 6
+seconds as it is an enough high latency
+value for a connection acceptance. Probably the average latency for a
+connection response, even passing through the Tor network, is
+considerably lesser than 6 seconds but anyway we can over-esteem a bit this
+value without unexpected bad consequences. On the other hand, an under-esteem of
+this value would threaten the analysis results. 
+
+Furthermore, from a client
+entry the nestled scan starts reading from the entry that is 100 ms far
+from the client start point. This lower threshold, $thr_{min}$, is needed in order to
+ filter those server entries that registered a connection time-stamp
+that results too young for being related to the client start point. This
+lower limit is more critical: a too low limit would guarantee false
+positive results and a too high limit would drop the right results.
+We will see later that after some tests, a value around 100ms seemed to maximize 
+the clients servers relation matching. %TODO in empirical results
+
+The analysis proceeds by recording a set of possible server candidates 
+ per each client. Each server candidate assumes a $pmatch$ value that
+indicates how much a server candidate can be the real server that
+established a connection with the client. The $pmatch$ value is defined
+as following:
+\begin{equation}
+pmatch = 1 - \frac{\Delta_t - thr_{min}}{thr_{max}}
+\end{equation}
+where $\Delta_t$ is the time distance between the server entry time-stamp and
+the client entry time-stamp.
+%TODO, example of candidate list with the figure, talk about the
+%average, and real stat comparison
 \subsection{Empirical Results}

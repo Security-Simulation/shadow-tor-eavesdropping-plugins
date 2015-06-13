@@ -101,7 +101,10 @@ attack in Tor and considering that the internet traffic coming from
 outside Tor could be filtered by the attacker's tracer
 software\footnote{The Tor exit nodes list is public\cite{toroverview}.}, avoiding in this
 way unwanted data interference.
-
+%TODO let's talk about the limitation that  a client connects always to only one server.
+% may be implemented in future works but anyway can be negligible for
+% now because in a temporal window when a client do some browsing (http
+% session) it does a lot of connections to the same server
 \textbf{Autosys} is a tracer application installed on both clients and
 servers which are interesting for an attacker.  
 In short, when autosys discover an outgoing connection from the
