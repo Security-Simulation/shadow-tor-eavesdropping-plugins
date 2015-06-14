@@ -1,5 +1,70 @@
 \section{Data Analysis}
-\subsection{Netbuilder Script}
+\subsection{Netbuilder and Launcher Scripts}
+As described in \ref{sec:Shadow}
+The Shadow simulator use a XML file to describe the network,
+we automatize this process with a python script called the net-builder script.\\
+This script will so build a scenario based on some input parameters as:
+\begin{itemize}
+\item The number of TOR relays in the simulation.
+\item The number of TOR exit nodes in the simulation.
+\item The number of TOR 4authorities\footnote{A 4 Authority node is simply the
+database that keep track of the state of the TOR network and the list
+of the TOR relays/exit-nodes} nodes in the simulation.
+\item The number of clients (simpletcp) of the simulation.
+\item The number of servers (simpletcp) of the simulation.
+\item The percentage of clients tracked by an autosys plug-in.
+\item The percentage of servers tracked by an autosys plug-in.
+\item The density of the network-requests.
+\end{itemize}
+
+When the others parameters are self-esplicative, the density parameter is somewhat
+that deserves more that two words on.
+This parameter specify the time interval between every connection made from the
+simpletcp plug-in to emulate the behaviour of different type of networks.
+We defined three behaviours to our network study:
+
+\begin{itemize}
+\item Slow:\\minimum: a mean of 800 milliseconds of sleep time between every connection,\\
+            maximum: a mean of 2 seconds of sleep time between every connection.
+\item Average:\\minimum: a mean of 80 milliseconds of sleep time between every connection,\\
+               maximum: a mean of 1 second of sleep time between every connection.
+\item Fast:\\minimum: a mean of 20 milliseconds of sleep time between every connection\\
+            maximum: a mean of 100 milliseconds of sleep time between every connection.
+\end{itemize}
+
+This normal distributed values are computed for every simpletcp client
+(which will compute a random uniform distributed value as described in \ref{sec:simpletcpclient}).\\
+
+The second auxiliary script we used is a bash script that helped us in the
+automatic run of the simulations.
+This script will run a bunch of simulation using the algorithm \ref{alg:launcher}.
+
+\begin{algorithm}[H]
+\caption{Launcher script}
+\begin{algorithmic}[2]
+\For{($simulation\_run \gets 1$; $simulation\_run <= steps$; $simulation\_run++$)}
+	\For{($sim\_id \gets 1$; $sim\_id <= simulations\_per\_step$; $sim\_id++$)}
+		\ForAll {$density$ $in$ $(slow, fast, average)$}
+		\If {The client trace percentage is not fixed}
+			\State $client\_trace\_value \gets sim\_id/simulations\_per\_step$
+		\EndIf
+		\If {The server trace percentage is not fixed}
+			\State $server\_trace\_value \gets sim\_id/simulations\_per\_step$
+		\EndIf
+		\If{A configuration is present for $<sim\_id, density>$ And the percentages are fixed}
+			\State Use the previous configuration
+		\Else
+			\State Generate a new configuration with net-builder
+		\EndIf
+		\State Launch the Shadow Simulator with the appropriate configuration.
+		\EndFor
+	\EndFor
+\EndFor
+\end{algorithmic}
+\label{alg:launcher}
+\end{algorithm}
+
+
 \subsection{Analyzer Script}
 The analyzer script takes a log file, generated previously by the logger
 server, as input and tries to

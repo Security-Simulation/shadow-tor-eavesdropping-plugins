@@ -11,6 +11,7 @@ the next paragraphs we will introduce shadow and we will illustrate our
 work based on this simulator.
  
 \subsection{Shadow}
+\label{sec:Shadow}
 Most of the simulators used for networks experimentation do not provide
 the use of real external applications, which their
 behaviour are often simulated as well. 
@@ -261,9 +262,10 @@ as we will see later on this study.
 \label{subsec:simpletcp}
 The last plug-in that we implemented emulate a simple HTTP client/server communication.
 \subsubsection {Client mode}
+\label{sec:simpletcpclient}
 This plug-in, in client mode, emulate the communication making some (a customizable amount)
 connections to the server
-with a random normal distribute sleep time in between of every connection
+with a random uniform distribute sleep time in between of every connection
 (this parameter is configurable too).\\
 The packet transfered by the plug-in simply contains the host-name of the
 host machine, this is to break the anonymity of the TOR system and analyze the results
