@@ -259,7 +259,6 @@ as we will see later on this study.
 
 \subsection{Simpletcp plug-in}
 \label{subsec:simpletcp}
-% spiegare socks
 The last plug-in that we implemented emulate a simple HTTP client/server communication.
 \subsubsection {Client mode}
 This plug-in, in client mode, emulate the communication making some (a customizable amount)
@@ -280,7 +279,21 @@ At the opposite end, a server simpletcp instance, will:
 	between the guessed users and the real users.
 \end{itemize}
 
-% Qui ci va un diagramma temporale con la comunicazione di TOR
+% XXX Qui ci va un diagramma temporale con la comunicazione di TOR
 
 \subsubsection {SOCKS5 operation}
-% TODO!
+To communicate over TOR we implemented the simpletcp plug-in as a SOCKS5 capable
+client.\\
+The SOCKS5 proxies works as described in ghe RFC1928\cite{leech1996rfc},
+in a nutshell the SOCKS5 is a transparent proxy design, it describe an instauration
+phase in which the proxy is informed about the other host, make the outgoing connection
+and, when some data is written on the incoming connection (from the client)
+the proxy will transmit this data trough the outgoing connection.\\
+
+% XXX altro schema temporale
+
+This proxy-like approach is required because the
+TOR interface is implemented as a SOCKS5 proxy, when some packet flows
+trough the interface (which is listening by default on localhost on port 9050)
+the TOR daemon will transmit over the TOR network following the anonymity methods
+described in the previous chapters.
