@@ -1,4 +1,9 @@
 \section{Data Analysis}
+Wrapping around the plug-in model of our system there are some auxiliary scripts,
+these scripts follow and automates all the simulation, from the input (building up
+the simulation scenario) to the output (analyzing the data and return the simulation
+summary).
+
 \subsection{Netbuilder and Launcher Scripts}
 As described in \ref{sec:Shadow}
 The Shadow simulator use a XML file to describe the network,
@@ -64,6 +69,14 @@ This script will run a bunch of simulation using the algorithm \ref{alg:launcher
 \label{alg:launcher}
 \end{algorithm}
 
+From this algorithm we can see that we can use this script to create a set of
+simulations with some linear modifications to the numbers of the traced clients
+or the number of the traced servers (or a combination of the two).
+We can also declare more than one run on this bunch of simulations, this can
+be useful to compute the mean values from the same configuration file, else we
+can generate a new configuration file starting from some input parameters.
+
+After the launch we can pass the simulation raw data to the analyzer script.
 
 \subsection{Analyzer Script}
 The analyzer script takes a log file, generated previously by the logger
