@@ -1,4 +1,9 @@
 \section{Data Analysis}
+After a bunch of simulation runs handled as previously explained, we performed a data analysis in order to
+figure out the effectiveness of a time analysis attack.  
+In this section we will illustrate the software tools we used in the
+analysis phase and eventually we will present the empirical results
+obtained.
 \subsection{Netbuilder and Launcher Scripts}
 As described in \ref{sec:Shadow}
 The Shadow simulator use a XML file to describe the network,
@@ -74,36 +79,44 @@ simulation. The log file is a list of entries that are formatted as described in
 \ref{fig:example_log_file} shows an example of it.
 \begin{figure}[H]
 \centering
-\begin{lstlisting}[language=bash,frame=single]
+\begin{lstlisting}[language=bash,frame=single, numbers=left]
 ...
-c;client3;1414557713
-c;client5;1414847666
-s;server3;1415099735
-c;client3;1415390384
-c;client5;1415536475
-c;client7;1415618044
-s;server3;1415788544
-c;client0;1415817129
-s;server2;1416118377
+c;client10;1420000000
+s;server7;1420008031
+c;client6;1420005867
+s;server9;1420146660
+s;server6;1420205384
+s;server8;1420252482
+c;client0;1420680882
+c;client1;1421017740
+s;server7;1421023888
+s;server2;1421156205
+c;client8;1421160529
+s;server3;1421318345
+s;server0;1421332488
+c;client7;1421487295
+c;client4;1421634744
+s;server9;1421726485
+c;client2;1421827747
 ...
 \end{lstlisting}
 \caption{Analyzer log file fragment example.}
 \label{fig:example_log_file}
 \end{figure}
-The script scans the log file and for each line check whatever the entry is
+The script scans the log file and for each line checks whatever the entry is
 related to a client or a server. If the entry refers to a client
 connection request it scans in a nestled loop the server connection entries
 that may be related to that client. The nested loop does not scan the whole
 file until its end, but it stops after a sufficient amount of
 read entries. In particular, the amount of entries to be read is
-measured in time: from a client entry, the scan process goes
+measured in time: from a client entry, the scan goes
 ahead until the difference between the time-stamp of the current scanned 
 entry and the time-stamp of the starting client entry is not greater
 than a fixed threshold $thr_{max}$. For our experiment we chose a limit of 6
 seconds as it is an enough high latency
-value for a connection acceptance. Probably the average latency for a
+value for a connection acceptance. Likely, the average latency for a
 connection response, even passing through the Tor network, is
-considerably lesser than 6 seconds but anyway we can over-esteem a bit this
+considerably smaller than 6 seconds but anyway we can over-esteem a bit this
 value without unexpected bad consequences. On the other hand, an under-esteem of
 this value would threaten the analysis results. 
 
@@ -119,7 +132,10 @@ the clients servers relation matching. %TODO in empirical results
 
 The analysis proceeds by recording a set of possible server candidates 
  per each client. Each server candidate assumes a $pmatch$ value that
-indicates how much a server candidate can be the real server that
+indicates how much a server candidate can be the real
+\footnote{The term ''real`` should not be misunderstood with
+non-simulated but should be intended as non-guessed or non-estimated.}
+ server that
 established a connection with the client. The $pmatch$ value is defined
 as following:
 \begin{equation}
@@ -127,6 +143,54 @@ pmatch = 1 - \frac{\Delta_t - thr_{min}}{thr_{max}}
 \end{equation}
 where $\Delta_t$ is the time distance between the server entry time-stamp and
 the client entry time-stamp.
-%TODO, example of candidate list with the figure, talk about the
-%average, and real stat comparison
+
+As instance let us consider the server candidates related to the first
+client entry, $client10$, of the example log
+fragment shown in figure \ref{fig:example_log_file}: 
+$server7$ is not considered at all in the pmatch calculation  as $\Delta_t$ 
+is lesser than $thr_{min}$; then the $pmatch$ values for the first server
+candidates related to the $client10$ are shown in figure \ref{fig:pmatch}:
+\begin{figure}[h]
+\begin{lstlisting}[language=bash,frame=single, numbers=left]
+candidate 	pmatch
+server9 	0.992
+server6 	0.982
+server8 	0.975
+server7  	0.846
+server2  	0.823 
+server3  	0.769
+server0  	0.794
+...
+\end{lstlisting}
+\caption{$pmatch$ values for server candidates related to $client10$}
+\label{fig:pmatch}
+\end{figure}
+
+Clearly the $pmatch$ probability is higher when the server connection is
+closer to $thr_{min}$ meaning that the likelihood of a server
+candidate to be the real server for the related client decreases when
+the server connection acceptance attempted far from 100ms. At the
+first look this simple
+assumption does not seem to provide a robust evaluation but, as the
+experiments results will confirm, it seems fair considering the average
+calculated with thousands of records. Focusing on the context we can realize that 
+even if sometimes some server candidate could assume a $pmatch$ value
+that is higher than the $pmatch$ value of the real server, or even if sometimes the
+real server could skip at all the $pmatch$ evaluation (e.g.
+for a too small $\Delta_t$), the real server mostly accepts
+the connections around the $thr_{min}$ threshold if well
+estimated.
+
+The analyzer script also collects information about the
+real connections logged by the simple-tcp applications. With this
+information the analyzer can tell us how much the estimated results are
+close to the real ones. Obviously, in a real time analysis attack the real connections
+information cannot be obtain by the client and server applications themselves 
+but in a simulation environment, we can better figure out how a real
+time analysis attack may be effective. Moreover by a set of simulations
+that provide the use of the real connections logged data, some
+parameters like $thr_{min}$ and $thr_{max}$ may be evaluated for 
+experimenting the attack in a real scenario. Also, the use of this technique
+by an attacker himself cannot be ruled out. 
 \subsection{Empirical Results}
+%TODO
