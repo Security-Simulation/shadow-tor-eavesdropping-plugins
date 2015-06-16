@@ -1,8 +1,18 @@
 \section{Data Analysis}
-After a bunch of simulation runs handled as previously explained, we performed a data analysis in order to
+Wrapping around the plug-in model of our system there are some auxiliary
+software (scripts)
+which follow and automate all the simulations, from the beginning (building up
+the simulation scenario) to the post-processing data analysis.
+
+Thus, after a bunch of simulation runs handled as previously explained,
+ we performed a data analysis in order to
 figure out the effectiveness of a time analysis attack.  
-In this section we will illustrate the software tools we used in the
-analysis phase and eventually we will present the empirical results
+
+In this section we will illustrate the software tools we used for
+handling the
+simulation runs and the software tools we used in the analysis phase. 
+Eventually we will 
+present the empirical results
 obtained.
 \subsection{Netbuilder and Launcher Scripts}
 As described in \ref{sec:Shadow}
@@ -69,6 +79,14 @@ This script will run a bunch of simulation using the algorithm \ref{alg:launcher
 \label{alg:launcher}
 \end{algorithm}
 
+From this algorithm we can see that we can use this script to create a set of
+simulations with some linear modifications to the numbers of the traced clients
+or the number of the traced servers (or a combination of the two).
+We can also declare more than one run on this bunch of simulations, this can
+be useful to compute the mean values from the same configuration file, else we
+can generate a new configuration file starting from some input parameters.
+
+After the launch we can pass the simulation raw data to the analyzer script.
 
 \subsection{Analyzer Script}
 The analyzer script takes a log file, generated previously by the logger
