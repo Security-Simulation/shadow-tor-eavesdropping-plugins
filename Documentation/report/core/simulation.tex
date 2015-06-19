@@ -64,6 +64,33 @@ the attack scenario will be illustrated in the next paragraphs.
     \label{fig:scenario}
 \end{figure}
 
+\begin{figure}[H]
+	\begin{sequencediagram}
+		\newthread{stc}{SimpleTcp}
+		\newinst{ac}{Autosys}
+		\newinst{tc}{TOR daemon}
+		\newinst[1]{ts}{TOR exit node}
+		\newinst[1]{as}{Autosys}
+		\newinst{sts}{SimpleTcp}
+		\newinst[1]{log}{Logger}
+
+		\begin{call}{stc}{}{ac}{}
+			\mess{ac}{Trace}{log}
+			\begin{call}{ac}{}{tc}{}
+			\begin{call}{tc}{\includegraphics[scale=0.2]{tor.jpg}}{ts}{\includegraphics[scale=0.2]{tor.jpg}}
+			\begin{call}{ts}{}{as}{}
+			\mess{as}{Trace}{log}
+			\begin{call}{as}{}{sts}{}
+			\end{call}
+			\end{call}
+			\end{call}
+			\end{call}
+		\end{call}
+	\end{sequencediagram}
+\label{fig:simpletcpsummary}
+\caption{Summarization of the behaviour of the plug-ins system (only one connection of the simpleTcp plugin)}
+\end{figure}
+
 The figure \ref{fig:scenario} shows an outline of the simulation
 scenario. More specifically the considered identities of the scenario are:
 \begin{itemize} 
@@ -335,31 +362,3 @@ trough the interface (which is listening by default on \textbf{localhost} on por
 the TOR daemon will transmit over the TOR network following the anonymity methods
 described in the previous chapters.
 
-\subsection{Summary}
-
-\begin{figure}[H]
-	\begin{sequencediagram}
-		\newthread{stc}{SimpleTcp}
-		\newinst{ac}{Autosys}
-		\newinst{tc}{TOR daemon}
-		\newinst[1]{ts}{TOR exit node}
-		\newinst[1]{as}{Autosys}
-		\newinst{sts}{SimpleTcp}
-		\newinst[1]{log}{Logger}
-
-		\begin{call}{stc}{}{ac}{}
-			\mess{ac}{Trace}{log}
-			\begin{call}{ac}{}{tc}{}
-			\begin{call}{tc}{...TOR...}{ts}{}
-			\begin{call}{ts}{}{as}{}
-			\mess{as}{Trace}{log}
-			\begin{call}{as}{}{sts}{}
-			\end{call}
-			\end{call}
-			\end{call}
-			\end{call}
-		\end{call}
-	\end{sequencediagram}
-\label{fig:simpletcpsummary}
-\caption{Summarization of the behaviour of the plug-ins system (only one connection of the simpleTcp plugin)}
-\end{figure}
