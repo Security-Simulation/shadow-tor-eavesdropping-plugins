@@ -152,7 +152,7 @@ The analysis proceeds by recording a set of possible server candidates
  per each client. Each server candidate assumes a $pmatch$ value that
 indicates how much a server candidate can be the real
 \footnote{The term ''real`` should not be misunderstood with
-non-simulated but should be intended as non-guessed or non-estimated.}
+non-simulated but should be intended as non-estimated.}
  server that
 established a connection with the client. The $pmatch$ value is defined
 as following:
@@ -214,5 +214,48 @@ that provide the use of the real connections logged data, some
 parameters like $thr_{min}$ and $thr_{max}$ may be evaluated for 
 experimenting the attack in a real scenario. Also, the use of this technique
 by an attacker himself cannot be ruled out. 
+\newpage
 \subsection{Empirical Results}
-%TODO
+\begin{figure}[H]
+\centering
+\includegraphics[scale=0.35]{graphs/s_server_mport_average_only.pdf}
+\includegraphics[scale=0.35]{graphs/s_server_mport.pdf}
+\includegraphics[scale=0.35]{graphs/c_tclient_mport_average_only.pdf}
+\includegraphics[scale=0.35]{graphs/c_tclient_mport.pdf}
+\caption{Matched portion graphs}
+\label{fig:g_mport}
+\end{figure}
+TODO BLABLABLABLABLA SU MPORT
+
+
+\begin{figure}[H]
+\centering
+\includegraphics[scale=0.35]{graphs/s_server_pmatch_average_only.pdf}
+\includegraphics[scale=0.35]{graphs/s_server_pmatch.pdf}
+\includegraphics[scale=0.35]{graphs/c_tclient_pmatch_average_only.pdf}
+\includegraphics[scale=0.35]{graphs/c_tclient_pmatch.pdf}
+\caption{Matching probability graphs}
+\label{fig:g_pmatch}
+\end{figure}
+
+TODO BLABLABLA SU PMATCH
+
+\begin{figure}[H]
+\centering
+\includegraphics[scale=0.35]{graphs/cs_tport_mport.pdf}
+\includegraphics[scale=0.35]{graphs/cs_tport_pmatch.pdf}
+\caption{Traced portion graphs}
+\label{fig:g_tport}
+\end{figure}
+
+TODO BALBALBALBA SU TRACED PORTION
+
+
+\begin{figure}[H]
+\centering
+\includegraphics[scale=0.35]{graphs/density_clients_ration.pdf}
+\caption{Communication density related to the logging capacity}
+\label{fig:g_density}
+\end{figure}
+
+TODO BLABLABLA SU DENSITY
