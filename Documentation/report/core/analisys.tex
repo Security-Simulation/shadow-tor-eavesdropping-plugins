@@ -149,15 +149,17 @@ We will see later that after some tests, a value around 100ms seemed to maximize
 the clients servers relation matching. %TODO in empirical results
 
 The analysis proceeds by recording a set of possible server candidates 
- per each client. Each server candidate assumes a $pmatch$ value that
+ per each client connection request. Each server candidate $s$ assumes a
+$pmatch_{creq,s}$ value, $lpmatch$ (local) from now, which
 indicates how much a server candidate can be the real
 \footnote{The term ''real`` should not be misunderstood with
 non-simulated but should be intended as non-estimated.}
  server that
-established a connection with the client. The $pmatch$ value is defined
+accepted the $creq$
+client request. The $lpmatch$ value is defined
 as following:
 \begin{equation}
-pmatch = 1 - \frac{\Delta_t - thr_{min}}{thr_{max}}
+lpmatch = 1 - \frac{\Delta_t - thr_{min}}{thr_{max}}
 \end{equation}
 where $\Delta_t$ is the time distance between the server entry time-stamp and
 the client entry time-stamp.
@@ -165,12 +167,12 @@ the client entry time-stamp.
 As instance let us consider the server candidates related to the first
 client entry, $client10$, of the example log
 fragment shown in figure \ref{fig:example_log_file}: 
-$server7$ is not considered at all in the pmatch calculation  as $\Delta_t$ 
-is lesser than $thr_{min}$; then the $pmatch$ values for the first server
-candidates related to the $client10$ are shown in figure \ref{fig:pmatch}:
+$server7$ is not considered at all in the $lpmatch$ calculation  as $\Delta_t$ 
+is lesser than $thr_{min}$; then the $lpmatch$ values for the first server
+candidates related to the client request c;client10;1420000000 are shown in figure \ref{fig:lpmatch}:
 \begin{figure}[h]
 \begin{lstlisting}[language=bash,frame=single, numbers=left]
-candidate 	pmatch
+candidate 	lpmatch
 server9 	0.992
 server6 	0.982
 server8 	0.975
@@ -180,11 +182,11 @@ server3  	0.769
 server0  	0.794
 ...
 \end{lstlisting}
-\caption{$pmatch$ values for server candidates related to $client10$}
-\label{fig:pmatch}
+\caption{$lpmatch$ values for server candidates related to $client10$}
+\label{fig:lpmatch}
 \end{figure}
 
-Clearly the $pmatch$ probability is higher when the server connection is
+Clearly the $lpmatch$ probability is higher when the server connection is
 closer to $thr_{min}$ meaning that the likelihood of a server
 candidate to be the real server for the related client decreases when
 the server connection acceptance attempted far from 100ms. At the
@@ -192,9 +194,9 @@ first look this simple
 assumption does not seem to provide a robust evaluation but, as the
 experiments results will confirm, it seems fair considering the average
 calculated with thousands of records. Focusing on the context we can realize that 
-even if sometimes some server candidate could assume a $pmatch$ value
-that is higher than the $pmatch$ value of the real server, or even if sometimes the
-real server could skip at all the $pmatch$ evaluation (e.g.
+even if sometimes some server candidate could assume a $lpmatch$ value
+that is higher than the $lpmatch$ value of the real server, or even if sometimes the
+real server could skip at all the $lpmatch$ evaluation (e.g.
 for a too small $\Delta_t$), the real server mostly accepts
 the connections around the $thr_{min}$ threshold if well
 estimated.
@@ -206,28 +208,131 @@ close to the real ones. Obviously, in a real time analysis attack the real conne
 information cannot be obtain by the client and server applications themselves 
 but in a simulation environment, we can better figure out how a real
 time analysis attack may be effective.
-%TODO tell that the final pmatch value is the pmatch average for each
-%candidate and show its formula
 
- Moreover by a set of simulations
+Moreover by a set of simulations
 that provide the use of the real connections logged data, some
-parameters like $thr_{min}$ and $thr_{max}$ may be evaluated for 
-experimenting the attack in a real scenario. Also, the use of this technique
-by an attacker himself cannot be ruled out. 
+parameters like $thr_{min}$ and $thr_{max}$ may be evaluated before 
+experimenting the attack in a real scenario and understand the matching
+accuracy. 
+With this in mind, the script
+finds the best server candidate for each client $c$ getting the maximum
+between the average
+$lpmatch$ values
+which are calculated on the set of connection requests for that
+client $c$. Thus each client is related to a set of server candidates
+and their average $lpmatch$.
+Then these data are
+compared with the (simulated) real connections and a global matching
+estimation value $pmatch$ is calculated as follows:
+
+\begin{algorithm}[H]
+\caption{Global pmatch calculation}
+\begin{algorithmic}
+\State $matched \gets 0$
+\ForAll {$c$ \textbf{in} $traced\_clients$}
+	\State $p_c \gets null$
+	\State $realsv \gets GetRealServer(c)$ 
+	{\footnotesize \Comment The server which $c$ connected to}
+	\ForAll {$s$ \textbf{in} $c_{SERVER\_CANDIDATES}$}
+		\If {$s$ = $realsv$}
+			\State $N \gets GetConnectionNumber(c, s) $ 
+			{\footnotesize \Comment The number of traced connections between $c$ and $s$}
+			\State $M \gets GetConnectionNumber(c, realsv)$ 
+			{\footnotesize \Comment The number of real connections between $c$ and $s$}
+ 
+			\State $p \gets s_{lpmatch\_AVG} \cdot \frac{ MIN(M, N)}{
+MAX(M, N)}$
+		\State \textbf{break}
+		\EndIf
+	\EndFor
+	\If {$p_c$}
+		\State $matched \gets matched + 1$
+		\State $pmatch \gets pmatch + p_c$
+	\EndIf	
+\EndFor
+
+\State $pmatch \gets pmatch / matched$
+
+\end{algorithmic}
+\label{alg:launcher}
+\end{algorithm}
+ 
+The $p$ contribution is calculated as the average
+$lpmatch$ attenuated by the distance between the amount of the estimated matched connections
+and the amount of the real ones. In this way if the $lpmatch$ was high
+in the estimation phase, it would be diminished if there is an
+inconsistency with the real data.
+Thus the global $pmatch$ represents the amount of how much the matching
+is correct.
+The last but not least parameter is the $matched$ $portion$ that indicates
+how many traced clients found their right server. 
+
+
+In the next paragraph we will look in details both the $pmatch$ and the
+$matched$ $portion$
+results obtained in different situations in order to understand how a
+time analisys attack can be effective, in terms of much it is able to match,
+and accurate, in terms of how many false results it may produce.
+
 \newpage
 \subsection{Empirical Results}
-\begin{figure}[H]
-\centering
-\includegraphics[scale=0.35]{graphs/s_server_mport_average_only.pdf}
-\includegraphics[scale=0.35]{graphs/s_server_mport.pdf}
-\includegraphics[scale=0.35]{graphs/c_tclient_mport_average_only.pdf}
-\includegraphics[scale=0.35]{graphs/c_tclient_mport.pdf}
-\caption{Matched portion graphs}
-\label{fig:g_mport}
+
+In order to retrieve an interesting results set we decided to conduct
+3 different simulation macro-bunches with the following characteristics:
+\begin{enumerate}
+	\item The number of traced clients was fixed to almost 100\% of the
+network and the number of traced server was increasing by one to another
+simulation starting from 0 and ending to the 100\% of the network.
+	\item The number of traced servers was fixed to almost 100\% of the
+network and the number of traced clients was increasing by one to another
+simulation starting from 0 and ending to the 100\% of the network.
+	\item Both numbers of traced clients and traced servers (traced
+network portion) was increasing by one to another
+simulation starting from 0 and ending to the 100\% of the network.
+\end{enumerate}
+
+Each macro-bunch was executed 4 times in order to understand the results
+average and their errors. 
+Also, for each of those simulation macro-bunches, 10 simulation sub-bunches were
+launched in order to provide a sufficient granularity in the traced
+entities escalation. Moreover for each sub-bunch 3 simulations were
+executed with 3 different values of the connections density: \textbf{slow},
+\textbf{average}, \textbf{fast}. %TODO: giustificarli
+
+\begin{figure}
+	\begin{subfigure}{.5\textwidth}
+		\centering
+		\includegraphics[width=1\linewidth]{graphs/s_server_mport_average_only.pdf}
+		\caption{Matched portion related to the traced servers number}
+		\label{fig:g_mporta}
+	\end{subfigure} 
+	\begin{subfigure}{.5\textwidth}
+		\centering
+		\includegraphics[width=1\linewidth]{graphs/s_server_mport.pdf}
+		\caption{Same as frame $a$ but with different densities}
+		\label{fig:g_mportb}
+	\end{subfigure}
+
+	\begin{subfigure}{.5\textwidth}
+		\centering
+		\includegraphics[width=1\linewidth]{graphs/c_tclient_mport_average_only.pdf}
+		\caption{Matched portion related to the traced clients number}
+		\label{fig:g_mportc}
+	\end{subfigure}
+	\begin{subfigure}{.5\textwidth}
+		\centering
+		\includegraphics[width=1\linewidth]{graphs/c_tclient_mport.pdf}
+		\caption{Same as frame $c$ but with different densities}
+		\label{fig:g_mportd}
+	\end{subfigure}
+
+	\caption{Matched portion graphs}
+	\label{fig:g_mport}
 \end{figure}
-TODO BLABLABLABLABLA SU MPORT
 
-
+The figure set \ref{fig:g_mport} shows some graphs about the matched
+portion results. As we can see in the figure \ref{fig:g_mporta}, the
+matched portion is linearly dependent by the number of traced servers. 
 \begin{figure}[H]
 \centering
 \includegraphics[scale=0.35]{graphs/s_server_pmatch_average_only.pdf}

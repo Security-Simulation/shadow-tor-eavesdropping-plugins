@@ -60,8 +60,8 @@ def printPretty(connections, clients_stat, real_stat):
 		print(client + " pmatch: %.3f \n\tcandidates" % clients_stat[client]['pmatch']) 
 		for candidate in clients_stat[client]['candidates']:
 			
-			print ("\t\tN: %3d   AVG: %.3f  %s\n" % 
-				(candidate['nconns'], candidate['avg'], candidate['server'])),
+			print ("\t\tN: %3d AVG: %.3f  SUM: %.2f  %s\n" % 
+				(candidate['nconns'], candidate['avg'], candidate['sum'], candidate['server'])),
 	
 	#for client in connections:
 				
@@ -84,7 +84,8 @@ def candidateRankings(connections):
 			clients_stat[client]['candidates'].append({
 				'server' : candidate[0],
 				'nconns' : candidate[1]['nconns'],
-				'avg': candidate[1]['avg']
+				'avg': candidate[1]['avg'],
+                                'sum': candidate[1]['sum']
 			})
 	
 	return clients_stat
@@ -116,6 +117,7 @@ def getAllServers(connections, client):
 		ssum = servers_infos[sv]['sum']
 		nconns = len(servers_infos[sv]['conns'])
 		servers[sv] = {}
+                servers[sv]['sum'] = ssum
 		servers[sv]['nconns'] = nconns
 		servers[sv]['avg'] = ssum / nconns
 		printDebug("client: " + client + " server: " + sv
@@ -123,14 +125,14 @@ def getAllServers(connections, client):
 	
 	
 	sorted_servers = sorted(servers.items(), 
-		key = lambda x :x[1]['avg'], reverse = True)
+		key = lambda x :x[1]['sum'], reverse = True)
 	
 
 	printDebug(sorted_servers)
 
 	return sorted_servers
 
-def calcProb(time1, time2):
+def calcProb(time1, time2, met_clients):
 	'''
 	Calculate the probability that a client connection was related or not
 	to a certain server connection. The time2 parameter should be the server
@@ -146,7 +148,13 @@ def calcProb(time1, time2):
 	prob = 0.0
 
 	if timeDistance <= THRESHOLD_MAX:		
-		prob = 1.0 - (float(timeDistance - THRESHOLD_MIN) / float(THRESHOLD_MAX))
+                #TODO can we do something here?
+		prob = 1.0 - (float(timeDistance - THRESHOLD_MIN) / float(THRESHOLD_MAX - THRESHOLD_MIN))
+               # for c in met_clients :
+               #     cTimeDistance = met_clients[c] - time1
+               #     cprob = (float(cTimeDistance - THRESHOLD_MIN) / float(THRESHOLD_MAX - THRESHOLD_MIN))
+               #     prob = prob - cprob
+ 
 	
 	return prob 
 
@@ -173,19 +181,22 @@ def analyzeForward(startConn, startIdx, data):
 	how much the server connection is related to the start client connection.
 	'''
 	servers = {}
+        met_clients = {}
 	for j in data[startIdx:]:
-		servConn = connectionParams(j)
+		forwConn = connectionParams(j)
                 #break the loop if the window is outside the threshold window
-                if servConn['time'] - startConn['time'] > THRESHOLD_MAX:
+                if forwConn['time'] - startConn['time'] > THRESHOLD_MAX:
                     break
-		if servConn['side'] == SERVER:
-			prob = calcProb(startConn['time'], servConn['time'])
+                if forwConn['side'] == CLIENT and forwConn['time'] - startConn['time'] > THRESHOLD_MIN:
+                    met_clients[len(met_clients)] = forwConn['time']
+		elif forwConn['side'] == SERVER:
+			prob = calcProb(startConn['time'], forwConn['time'], met_clients)
 			if prob:
 				if prob <= 0.0: #sanity check (just in case shit happens)
 					break 
 		
-				if not servConn['hostname'] in servers:
-					servers[servConn['hostname']] = [prob, servConn['time']]
+				if not forwConn['hostname'] in servers:
+					servers[forwConn['hostname']] = [prob, forwConn['time']]
 
 	return servers
 
@@ -319,12 +330,15 @@ if __name__ == '__main__':
 				#TODO: select realsv according to some policy (the one with
 				# highest nconns
 				realsv = real_stat[eclient]['candidates'][0]
+                                
+                                if len(clients_stat[eclient]['candidates']) > 0: 
+                                    sv = clients_stat[eclient]['candidates'][0] #best candidate
 
-				for sv in clients_stat[eclient]['candidates']:
-					if sv['server'] == realsv['server']:
-						p = (sv['avg'] * min(realsv['nconns'], sv['nconns']) / 
-								max(realsv['nconns'], sv['nconns']))
-						clients_stat[eclient]['pmatch'] = p
+                                    #for sv in clients_stat[eclient]['candidates']:
+                                    if sv['server'] == realsv['server']:
+                                            p = (sv['avg'] * min(realsv['nconns'], sv['nconns']) / 
+                                                            max(realsv['nconns'], sv['nconns']))
+                                            clients_stat[eclient]['pmatch'] = p
 			
 			#matched client
 			if clients_stat[eclient]['pmatch'] != -1:
