@@ -26,7 +26,7 @@ import sys
 import getopt
 import operator
 import time
-
+import math
 #Constants
 CLIENT = 0
 SERVER = 1
@@ -57,12 +57,16 @@ def printPretty(connections, clients_stat, real_stat):
 		
 	print "\nEVALUATED STATS"
 	for client in clients_stat:
-		print(client + " pmatch: %.3f \n\tcandidates" % clients_stat[client]['pmatch']) 
+		print(client + " matched accuracy: %.3f \n\tcandidates" % clients_stat[client]['maccuracy']) 
 		for candidate in clients_stat[client]['candidates']:
-			
-			print ("\t\tN: %3d AVG: %.3f  SUM: %.2f  %s\n" % 
-				(candidate['nconns'], candidate['avg'], candidate['sum'], candidate['server'])),
-	
+		    print("\t\tN: %3d AVG: %.3f  SCR: %.2f  GAP: %.3f " % 
+                        (candidate['nconns'], candidate['avg'], candidate['score'], candidate['gap'])),
+                    if 'dgap' in candidate and 'dscore' in candidate:
+	                print("DGAP %.3f  DSCR %.3f %s \n" % 
+                            (candidate['dgap'], candidate['dscore'], candidate['server']))
+                    else:
+                        print("%s \n" % (candidate['server']))
+
 	#for client in connections:
 				
 		#for conn in connections[client]:
@@ -81,12 +85,25 @@ def candidateRankings(connections):
 		clients_stat[client] = {}
 		clients_stat[client]['candidates'] = []
 		for candidate in servers:
-			clients_stat[client]['candidates'].append({
+			if 'dgap' in candidate[1] and 'dscore' in candidate[1]:
+                            clients_stat[client]['candidates'].append({
 				'server' : candidate[0],
 				'nconns' : candidate[1]['nconns'],
 				'avg': candidate[1]['avg'],
-                                'sum': candidate[1]['sum']
-			})
+                                'score': candidate[1]['score'],
+                                'gap': candidate[1]['gap'],
+                                'dscore': candidate[1]['dscore'],
+                                'dgap': candidate[1]['dgap']
+			    })
+                        else:
+                            clients_stat[client]['candidates'].append({
+				'server' : candidate[0],
+				'nconns' : candidate[1]['nconns'],
+				'avg': candidate[1]['avg'],
+                                'score': candidate[1]['score'],
+                                'gap': candidate[1]['gap']
+			    })
+                        
 	
 	return clients_stat
 
@@ -100,36 +117,57 @@ def getAllServers(connections, client):
 	servers_infos = {}
 	sorted_servers = []
 	
+        #Scan all the connections of the given clients.
+        #Each connection has some related server data, that we are going
+        #to summarize in a dictionary that is indexed by servers (servers_infos)
 	for cliconn in connections[client]:
-		for sv in cliconn['servers']:
-			if sv not in servers_infos:
-				servers_infos[sv] = {}
-				servers_infos[sv]['sum'] = 0
-				servers_infos[sv]['conns'] = []
+                for sv in cliconn['servers']:
 			server_data = {}
 			server_data['ctime'] = cliconn['time']
 			server_data['stime'] = cliconn['servers'][sv][1]
 			server_data['prob'] = cliconn['servers'][sv][0]
-			servers_infos[sv]['conns'].append(server_data)
+			
+                        #Create the server entry if it is its fisrt visit
+                        if sv not in servers_infos:
+				servers_infos[sv] = {}
+				servers_infos[sv]['sum'] = 0
+				servers_infos[sv]['conns'] = []
+                                servers_infos[sv]['gap'] = 0
+                                servers_infos[sv]['last_prob'] = server_data['prob']
+			
+                        
+                        servers_infos[sv]['conns'].append(server_data)
 			servers_infos[sv]['sum'] += server_data['prob']
+                        servers_infos[sv]['gap'] += (math.fabs(float(server_data['prob']) - 
+                            float(servers_infos[sv]['last_prob'])))
+                        servers_infos[sv]['last_prob'] = server_data['prob'] 
 	
+        # Let's move the servers_infos dictionary in a smaller one filtering 
+        # the necessary informations only
 	for sv in servers_infos:
 		ssum = servers_infos[sv]['sum']
 		nconns = len(servers_infos[sv]['conns'])
+                gap = servers_infos[sv]['gap']
 		servers[sv] = {}
-                servers[sv]['sum'] = ssum
 		servers[sv]['nconns'] = nconns
 		servers[sv]['avg'] = ssum / nconns
+                servers[sv]['gap'] = gap / nconns 
+           #     servers[sv]['dgap'] = -1.0
+           #     servers[sv]['dscore'] = -1.0
+                servers[sv]['score'] = float(ssum) / (gap + 1)
 		printDebug("client: " + client + " server: " + sv
-			+ " avg: " + str(servers[sv]['avg']))
+			+ " avg: " + str(servers[sv]['avg']) + " gap : " + str(servers[sv]['gap']))
 	
 	
 	sorted_servers = sorted(servers.items(), 
-		key = lambda x :x[1]['sum'], reverse = True)
+		key = lambda x :x[1]['score'], reverse = True)
 	
-
-	printDebug(sorted_servers)
-
+       
+        if len(sorted_servers) > 1 :
+            sorted_servers[0][1]['dgap'] = (sorted_servers[1][1]['gap'] - 
+                                        sorted_servers[0][1]['gap'])
+            sorted_servers[0][1]['dscore'] = (sorted_servers[0][1]['score'] - 
+                                        sorted_servers[1][1]['score'])
 	return sorted_servers
 
 def calcProb(time1, time2, met_clients):
@@ -150,6 +188,7 @@ def calcProb(time1, time2, met_clients):
 	if timeDistance <= THRESHOLD_MAX:		
                 #TODO can we do something here?
 		prob = 1.0 - (float(timeDistance - THRESHOLD_MIN) / float(THRESHOLD_MAX - THRESHOLD_MIN))
+               # prob *= 1.0 / float(met_clients) 
                # for c in met_clients :
                #     cTimeDistance = met_clients[c] - time1
                #     cprob = (float(cTimeDistance - THRESHOLD_MIN) / float(THRESHOLD_MAX - THRESHOLD_MIN))
@@ -181,14 +220,15 @@ def analyzeForward(startConn, startIdx, data):
 	how much the server connection is related to the start client connection.
 	'''
 	servers = {}
-        met_clients = {}
+        met_clients = 1.0
 	for j in data[startIdx:]:
 		forwConn = connectionParams(j)
                 #break the loop if the window is outside the threshold window
                 if forwConn['time'] - startConn['time'] > THRESHOLD_MAX:
                     break
                 if forwConn['side'] == CLIENT and forwConn['time'] - startConn['time'] > THRESHOLD_MIN:
-                    met_clients[len(met_clients)] = forwConn['time']
+                    met_clients *= math.exp(1)
+                    #met_clients[len(met_clients)] = forwConn['time']
 		elif forwConn['side'] == SERVER:
 			prob = calcProb(startConn['time'], forwConn['time'], met_clients)
 			if prob:
@@ -269,7 +309,7 @@ if __name__ == '__main__':
 	connections = realConnection = clients_stat = real_stat = {}
 	dumpData = False
 	rclients_missing = n_clients = matched_clients = 0
-        matched_portion = pmatch = 0.0
+        matched_portion = matched_accuracy = 0.0
 	usage = (" --help --tracefile=<path> --tracedir=<path> " 
 				"--threshold=<MIN,MAX> --dump --debug")
 	
@@ -320,7 +360,7 @@ if __name__ == '__main__':
 					'server' : sv})
 
 		for eclient in clients_stat:
-			clients_stat[eclient]['pmatch'] = -1
+			clients_stat[eclient]['maccuracy'] = -1.0
  			
 			# Some problem occured if a logged connection does not appear 
 			# in the real connections
@@ -336,31 +376,26 @@ if __name__ == '__main__':
 
                                     #for sv in clients_stat[eclient]['candidates']:
                                     if sv['server'] == realsv['server']:
-                                            p = (sv['avg'] * min(realsv['nconns'], sv['nconns']) / 
-                                                            max(realsv['nconns'], sv['nconns']))
-                                            clients_stat[eclient]['pmatch'] = p
+                                            p = 0.0
+                                            p = (float(min(realsv['nconns'], sv['nconns'])) / 
+                                                            float(max(realsv['nconns'], sv['nconns'])))
+                                            clients_stat[eclient]['maccuracy'] = p
 			
 			#matched client
-			if clients_stat[eclient]['pmatch'] != -1:
+			if clients_stat[eclient]['maccuracy'] != -1:
                                 matched_clients += 1
-				pmatch += clients_stat[eclient]['pmatch']
-		#print pmatch
-		#print n_client
+				matched_accuracy += clients_stat[eclient]['maccuracy']
+                
                 if matched_clients > 0:
-                    pmatch = pmatch / float(matched_clients)
+                    matched_accuracy /= float(matched_clients)
 	    
 	if dumpData:
 		print connections
 	else:
-		printPretty(connections, clients_stat, real_stat)
+		print printPretty(connections, clients_stat, real_stat)
 
         if matched_clients > 0:
             matched_portion = matched_clients / float(n_clients)
 
-	print "\nMissing client in the real stats: " + str(rclients_missing)
-        print ("\nMatched %f clients of %d totals with a"
-                "matching probability of %.3f \n" % (matched_portion, n_clients, pmatch))
-        
-        
-        print ("missing:%d;matched:%d;n_traced_clients:%d;matched_portion:%f;pmatch:%f\n" % 
-            (rclients_missing, matched_clients, n_clients, matched_portion, pmatch))
+        print ("missing:%d;matched:%d;n_traced_clients:%d;matched_portion:%f;matching_accuracy:%f\n" % 
+            (rclients_missing, matched_clients, n_clients, matched_portion, matched_accuracy))
