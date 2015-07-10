@@ -324,7 +324,7 @@ Also, for each of those simulation macro-bunches, 10 simulation sub-bunches were
 launched in order to provide a sufficient granularity in the traced
 entities escalation. Moreover for each sub-bunch 3 simulations were
 executed with 3 different values of the connections density: \textbf{slow},
-\textbf{average}, \textbf{fast}. %TODO: giustificarli
+\textbf{average}, \textbf{fast}. 
 
 \begin{figure}
 	\begin{subfigure}{.5\textwidth}
@@ -358,8 +358,24 @@ executed with 3 different values of the connections density: \textbf{slow},
 \end{figure}
 
 The figure set \ref{fig:g_mport} shows some graphs about the matched
-portion results. As we can see in the figure \ref{fig:g_mporta}, the
-matched portion is linearly dependent by the number of traced servers. 
+portion results. More specifically the figure \ref{fig:g_mporta}, shows
+the test with the fixed number of traced clients and the variable number
+of traced servers. As we can see the matched portion is almost linearly 
+dependent by the number of traced servers.
+This behavior was expected, in fact with a small amount of traced
+servers most of the clients would not find their right server as its
+connections are probably not logged. Also, it is interesting that
+increasing the connections density (\ref{fig:g_mportb}) the function
+trend seems to be more precise. This may be given by the fact that the
+$gap_{AVG}$ tends to be more accurate increasing the number of
+connections in the same temporal window, thus increasing the score of
+the right
+servers. Anyway it is comforting that while increasing the
+connections density, the best candidate estimation does not seem to be affected by the 
+ connections noise coming from the other server candidates.
+
+
+
 \begin{figure}[H]
 \centering
 \includegraphics[scale=0.35]{graphs/s_server_pmatch_average_only.pdf}
