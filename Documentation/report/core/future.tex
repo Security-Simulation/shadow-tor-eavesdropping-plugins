@@ -1,10 +1,4 @@
 \section{Future Works}
-%TODO: diciamo che effettivamente sembra molto vulnerabile a time
-%analysis anche se  si dovrebbe provare con reti più grandi anche se "AS-awareness in Tor
-%path selection" dice che non cambia molto con la crescita della rete.
-%Loro propongono anche un algoritmo di selezione dei percorsi che
-%dovrebbe andar "meglio". Diamiogli un occhiata e in caso menzioniamolo. 
-
 As we stated in the previous sections, this study only cover a little part of
 the big field of the timing-analysis attacks\footnote{Or, more in general, side
 channel attacks; There is a specific field in cryptanalysis that study this kind
@@ -29,15 +23,12 @@ attack, because the packets will be transmitted and mixed in random ways,
 this can be a starting point to make an efficient non-low latency onion routing
 network. Or, hopefully, a powerful mix of the two implementations.
 \\\\
-Otherwise a work related to our implementation model can be an implementation
-of the simpletcp plug-in capable of connecting and download from multiple servers
-in a single instance, and the changes\
+An implementation work related to our model can be the modification
+of the simpletcp plug-in to make it capable of connecting and download from
+multiple servers in a single instance, and the changes
 required to the analysis method/algorithm to trace that kinds of connections.
 \\\\
 As a side note, this experiments can be repeated with a bigger tor
-network, but, as stated in this study and in the paper \emph{AS-awareness in Tor
-path selection}\cite{edman2009awareness}:\\
-\begin{quote}
-TODO QUA CI VA LA CITAZIONE DAL PAPER CHE DICE CHE NON CAMBIA L'ANALISI ALLA DIMENSIONE
-DELLA RETE
-\end{quote}
+network, but, as what transpire from the paper\emph{AS-awareness in Tor
+path selection}\cite{edman2009awareness} this problem is not related to
+the proportion of the network.
