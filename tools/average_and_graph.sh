@@ -170,11 +170,11 @@ elif [ $1 == 'both' ]; then
 elif [ $1 == 'client' ]; then
 	LABEL_SCRIPT="set xlabel \"Traced Client Portion\"; set ylabel \"Matched Portion\""
 elif [ $1 == 'cpmatch' ]; then
-	LABEL_SCRIPT="set xlabel \"Traced Client Portion\"; set ylabel \"pmatch\""
+	LABEL_SCRIPT="set xlabel \"Traced Client Portion\"; set ylabel \"Matching accuracy\""
 elif [ $1 == 'spmatch' ]; then
-	LABEL_SCRIPT="set xlabel \"Traced Servers\"; set ylabel \"pmatch\""
+	LABEL_SCRIPT="set xlabel \"Traced Servers\"; set ylabel \"Matching accuracy\""
 elif [ $1 == 'bothpmatch' ]; then
-	LABEL_SCRIPT="set xlabel \"Traced Portion\"; set ylabel \"pmatch\""
+	LABEL_SCRIPT="set xlabel \"Traced Portion\"; set ylabel \"Matching accuracy\""
 elif [ $1 == 'clients_rate' ]; then
 	GENERAL_GNUPLOT_SCRIPT="set yrange [0 : 1]; set boxwidth 0.5 relative; set style fill solid 0.5"
 	LABEL_SCRIPT="set xlabel \"Density\"; set ylabel \"Traced Clients/Logged Clients\""
