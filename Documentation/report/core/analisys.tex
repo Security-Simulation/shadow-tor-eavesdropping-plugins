@@ -353,11 +353,11 @@ executed with 3 different values of the connections density: \textbf{slow},
 		\label{fig:g_mportd}
 	\end{subfigure}
 
-	\caption{Matched portion graphs}
+	\caption{Matched portion charts}
 	\label{fig:g_mport}
 \end{figure}
 
-The figure set \ref{fig:g_mport} shows some graphs about the matched
+The figure set \ref{fig:g_mport} shows some charts about the matched
 portion results. More specifically the figure \ref{fig:g_mporta}, shows
 the test with the fixed number of traced clients and the variable number
 of traced servers. As we can see the matched portion is almost linearly 
@@ -373,31 +373,96 @@ the right
 servers. Anyway it is comforting that while increasing the
 connections density, the best candidate estimation does not seem to be affected by the 
  connections noise coming from the other server candidates.
+Figures \ref{fig:g_mportc} and \ref{fig:g_mportd} show the experiments
+with a fixed number of traced servers at 100\% and a variable number of
+traced clients. We can see
+that the matched portion tends to be constant around 80\% (as it was in
+figure \ref{fig:g_mporta} with a hight portion of traced servers) at the variation of
+the number of traced clients. This was also expected as the analysis is
+conducted from the clients side (it searches the right servers of the
+traced clients) and the matched portion is thus relative to the
+number of traced clients. 
 
+\begin{figure}
+\begin{subfigure}{.5\textwidth}
+		\centering
+		\includegraphics[width=1\linewidth]{graphs/s_server_pmatch_average_only.pdf}
+		\caption{Matched accuracy related to the traced servers number}
+		\label{fig:g_maccuracya}
+	\end{subfigure} 
+	\begin{subfigure}{.5\textwidth}
+		\centering
+		\includegraphics[width=1\linewidth]{graphs/s_server_pmatch.pdf}
+		\caption{Same as frame $a$ but with different densities}
+		\label{fig:g_maccuracyb}
+	\end{subfigure}
 
+	\begin{subfigure}{.5\textwidth}
+		\centering
+		\includegraphics[width=1\linewidth]{graphs/c_tclient_pmatch_average_only.pdf}
+		\caption{Matched accuracy related to the traced clients number}
+		\label{fig:g_maccuracyc}
+	\end{subfigure}
+	\begin{subfigure}{.5\textwidth}
+		\centering
+		\includegraphics[width=1\linewidth]{graphs/c_tclient_pmatch.pdf}
+		\caption{Same as frame $c$ but with different densities}
+		\label{fig:g_maccuracyd}
+	\end{subfigure}
 
-\begin{figure}[H]
-\centering
-\includegraphics[scale=0.35]{graphs/s_server_pmatch_average_only.pdf}
-\includegraphics[scale=0.35]{graphs/s_server_pmatch.pdf}
-\includegraphics[scale=0.35]{graphs/c_tclient_pmatch_average_only.pdf}
-\includegraphics[scale=0.35]{graphs/c_tclient_pmatch.pdf}
-\caption{Matching probability graphs}
-\label{fig:g_pmatch}
+	\caption{Matched accuracy charts}
+	\label{fig:g_maccuracy}
 \end{figure}
 
-TODO BLABLABLA SU PMATCH
+The charts shown in figure \ref{fig:g_maccuracy} shows the matching
+accuracy results in the same order of the matched portion experiment
+shown in figure \ref{fig:g_mport}. Clearly the matched accuracy is
+almost constant around its maximum value, meaning that the clients who
+correctly found their best candidates matched almost all the connections
+from those servers. Moreover the matching accuracy does not
+depend from any of the factors considered: traced clients number, traced
+servers number and connections density.
 
-\begin{figure}[H]
-\centering
-\includegraphics[scale=0.35]{graphs/cs_tport_mport.pdf}
-\includegraphics[scale=0.35]{graphs/cs_tport_pmatch.pdf}
-\caption{Traced portion graphs}
-\label{fig:g_tport}
+\begin{figure}
+	\begin{subfigure}{.5\textwidth}
+		\centering
+		\includegraphics[width=1\linewidth]{graphs/cs_tport_mport.pdf}
+		\caption{Matched portion related to the traced portion}
+		\label{fig:g_tporta}
+	\end{subfigure} 
+	\begin{subfigure}{.5\textwidth}
+		\centering
+		\includegraphics[width=1\linewidth]{graphs/cs_tport_pmatch.pdf}
+		\caption{Matched accuracy related to the traced portion}
+		\label{fig:g_tportb}
+	\end{subfigure} 
+	\caption{Charts about matched portion and matched accuracy at the variation of both
+traced clients and traced servers}
+	\label{fig:g_tport}
 \end{figure}
 
 TODO BALBALBALBA SU TRACED PORTION
 
+
+\begin{figure}
+	\begin{subfigure}{.5\textwidth}
+		\centering
+		\includegraphics[width=1\linewidth]{graphs/map_cs_4_average.pdf}
+		\caption{Trusted matching chart with 40\% of traced portion}
+		\label{fig:g_tporta}
+	\end{subfigure} 
+	\begin{subfigure}{.5\textwidth}
+		\centering
+		\includegraphics[width=1\linewidth]{graphs/map_cs_9_average.pdf}
+		\caption{Trusted matching chart with 90\% of traced portion}
+		\label{fig:g_tportb}
+	\end{subfigure} 
+	\caption{Charts about trusted matching parameter}
+	\label{fig:g_tport}
+\end{figure}
+
+
+TODO BALBALBALBA SU TRUSTED MATCHING
 
 \begin{figure}[H]
 \centering
