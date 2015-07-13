@@ -441,7 +441,21 @@ traced clients and traced servers}
 	\label{fig:g_tport}
 \end{figure}
 
-TODO BALBALBALBA SU TRACED PORTION
+The charts in figure \ref{fig:g_tport} show the results of the
+tests where both traced servers and traced clients were variable
+(variable traced portion). This
+represents the most realistic scenario and we can notice that the
+matched portion trend seems to respect the sum of the trend results of the other
+two experiments (figure \ref{fig:g_mport}). We can see that a
+time-analysis attacker should be interested to trace as much Tor
+network node as possibile as the matched portion almost
+linearly scales with the traced portion. As istance if an attacker is
+able to trace an half of the Tor network nodes he may understand the
+relations between the clients and servers of around a quarter of the Tor
+network. Moreover, the matching accuracy still remains almost costant
+around 1, meaning that of that quarter of the Tor network the attacker
+may be able to correctly understand the end-points of almost all the connections.
+
 
 
 \begin{figure}
@@ -462,7 +476,12 @@ TODO BALBALBALBA SU TRACED PORTION
 \end{figure}
 
 
-TODO BALBALBALBA SU TRUSTED MATCHING
+Until now we have not faced yet the problem about how an attacker can distinguish
+the clients that found a right matching among the others. We based our
+matching portion evaluation comparing all the results with the real
+connections logged by the simulations. This is obviously not possibile
+in a real scenario thus we tried to understand if an attacker may
+distinguish the right matchings basing on some parameters.
 
 \begin{figure}[H]
 \centering
