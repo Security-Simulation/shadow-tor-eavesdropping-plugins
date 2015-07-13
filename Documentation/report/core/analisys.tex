@@ -145,8 +145,9 @@ from the client start point. This lower threshold, $thr_{min}$, is needed in ord
 that results too young for being related to the client start point. This
 lower limit is more critical: a too low limit would guarantee false
 positive results and a too high limit would drop the right results.
-We will see later that after some tests, a value around 100ms seemed to maximize 
-the clients servers relation matching. %TODO in empirical results
+We chose a value of 100ms as it seemed to maximize 
+the clients servers relation matching. Anyway a more accurate search
+phase of this threshold parameter may be carried out in future works.
 
 The analysis proceeds by recording a set of possible server candidates 
  per each client connection request. Each server candidate $s$ assumes a
@@ -193,7 +194,7 @@ closer to $thr_{min}$ meaning that the likelihood of a server
 candidate to be the real server for the related client decreases when
 the server connection acceptance attempted far from 100ms. 
 
-Another fact that may be considered in a time-analysis is that if a server accepts a
+Another fact that may be considered in a timing analysis is that if a server accepts a
 connection request from a client after a certain time $\Delta_t$, that
 server will likely accept again another connection from the same client
 after a time that is close to $\Delta_t$ if the Tor communication path is the same as
@@ -204,7 +205,6 @@ Thus, as the $pmatch$ is defined as the $\Delta_t$ normalization,
 let us define the $gap$ average related to a
 server $s$ that is a candidate for a client $c$ as follows:
 
-%TODO gap
 \begin{equation}
 \label{eq:gap}
  gap_{AVG}(c,s) = \frac{\sum_{i=0}^{N(c,s)} | pmatch(creq_{i+1},s) -
@@ -301,9 +301,7 @@ $matched\_portion$
 results obtained in different situations in order to understand how a
 time analysis attack can be effective.
 
-\newpage
 \subsection{Empirical Results}
-
 In order to retrieve an interesting results set we decided to conduct
 3 different simulation macro-bunches with the following characteristics:
 \begin{enumerate}
@@ -325,6 +323,19 @@ launched in order to provide a sufficient granularity in the traced
 entities escalation. Moreover for each sub-bunch 3 simulations were
 executed with 3 different values of the connections density: \textbf{slow},
 \textbf{average}, \textbf{fast}. 
+
+Each simulation run was executed on a dedicated machine which included
+ eight 64bit CPU cores at 2.6 GHz and 16GB of RAM. Each simulation
+macro-bunch took around 30 hours, thus the whole simulation process took
+around 360 hours with a total of around 360 simulation single runs.
+Despite the long simulation time used, the network size numbers are not
+so exciting: for every simulation run the network included 700 clients
+and 10 servers. As already announced before, this computational limit is
+caused by the use of real Tor applications even if the network was
+virtualized. One of the most essential point for future works would be to
+conduct the experiments with a more powerful dedicated hardware testing
+if the results observed in this phase would properly scale in a bigger
+simulation network. 
 
 \begin{figure}
 	\begin{subfigure}{.5\textwidth}
@@ -423,6 +434,28 @@ from those servers. Moreover the matching accuracy does not
 depend from any of the factors considered: traced clients number, traced
 servers number and connections density.
 
+
+
+\begin{figure}
+	\centering
+	\includegraphics[scale=0.35]{graphs/density_clients_ration.pdf}
+	\caption{Communication density related to the logging capacity}
+	\label{fig:g_density}
+\end{figure}
+
+Even if the connections density does not seem to highly interfere with
+the matched portion and the matched accuracy, an important event must be
+considerate looking at the figure \ref{fig:g_density}, which shows the
+percentage of clients and servers actually logged by the analyzer plug-in on the
+number of clients and servers declared as to be traced. We can notice
+that increasing the connections density the logging capacity diminishes.
+This behaviour is given simply because the logger entity is centralized
+in one server that suffers while trying to log all the UDP packets
+coming from every node. That is why in a real
+scenario an attacker with enough resources may consider to distribute 
+the logging workload on more
+entities.
+
 \begin{figure}
 	\begin{subfigure}{.5\textwidth}
 		\centering
@@ -447,12 +480,12 @@ tests where both traced servers and traced clients were variable
 represents the most realistic scenario and we can notice that the
 matched portion trend seems to respect the sum of the trend results of the other
 two experiments (figure \ref{fig:g_mport}). We can see that a
-time-analysis attacker should be interested to trace as much Tor
-network node as possibile as the matched portion almost
-linearly scales with the traced portion. As istance if an attacker is
+timing analysis attacker should be interested to trace as much Tor
+network node as possible as the matched portion almost
+linearly scales with the traced portion. As instance if an attacker is
 able to trace an half of the Tor network nodes he may understand the
 relations between the clients and servers of around a quarter of the Tor
-network. Moreover, the matching accuracy still remains almost costant
+network. Moreover, the matching accuracy still remains almost constant
 around 1, meaning that of that quarter of the Tor network the attacker
 may be able to correctly understand the end-points of almost all the connections.
 
@@ -463,31 +496,55 @@ may be able to correctly understand the end-points of almost all the connections
 		\centering
 		\includegraphics[width=1\linewidth]{graphs/map_cs_4_average.pdf}
 		\caption{Trusted matching chart with 40\% of traced portion}
-		\label{fig:g_tporta}
+		\label{fig:g_tmatcha}
 	\end{subfigure} 
 	\begin{subfigure}{.5\textwidth}
 		\centering
 		\includegraphics[width=1\linewidth]{graphs/map_cs_9_average.pdf}
 		\caption{Trusted matching chart with 90\% of traced portion}
-		\label{fig:g_tportb}
+		\label{fig:g_tmatchb}
 	\end{subfigure} 
 	\caption{Charts about trusted matching parameter}
-	\label{fig:g_tport}
+	\label{fig:g_tmatch}
 \end{figure}
 
 
 Until now we have not faced yet the problem about how an attacker can distinguish
 the clients that found a right matching among the others. We based our
 matching portion evaluation comparing all the results with the real
-connections logged by the simulations. This is obviously not possibile
+connections logged by the simulations. This is obviously not possible
 in a real scenario thus we tried to understand if an attacker may
-distinguish the right matchings basing on some parameters.
+distinguish the right matchings according to some parameter.
+The maps in figure \ref{fig:g_tmatch} summarize the status of the best
+server candidates found at the end of two analyses, with traced portions
+variable, taken as
+examples. In particular in the map \ref{fig:g_tmatcha} the traced
+portion was at the 40\% of the Tor network while in the map
+\ref{fig:g_tmatchb} the traced portion was at the 90\% of the entire
+network. The maps show the gap delta, which is the difference between
+the gap of the best
+candidate and the gap of its successor in the candidate list,  in
+relations with the score delta, same as for the gap, and the number of
+connections that have been assigned to the best candidate. 
+Also, the triangle points are the best candidate that found a matching
+with the real connection while the circle points are the 
+best candidates that did not find a matching.
+Interestingly, mostly all the circles are situated in the bottom left
+area with a black or dark blue colour. This suggests that an attacker
+may consider to use these parameter in order to distinguish which
+clients have found a matching. As instance in a real scenario one may
+think to consider as $matched$ only those best candidates that got a
+score delta higher than 30 or those best candidates that got a score
+delta higher than 15 but a gap delta higher than 0.03 and found more
+than 40 connections. We can name this set of filtered best candidates as
+the ''trusted matchings set`` where the trusting increases while moving
+upper right in the map and to the yellow in the color range. Even just
+considering the score delta would be enough to collect the
+$matched$ best candidates only, anyway an attacker may decide to enlarge
+the trusted matchings set relaxing the score delta threshold and
+considering the other parameters. Indeed there is a trade-off between
+maximize the ''matching set``, trying to reach the matched portion
+results, and maximizing the amount of
+trusting. More tests and considerations about these aspects may be
+proposed in future works.
 
-\begin{figure}[H]
-\centering
-\includegraphics[scale=0.35]{graphs/density_clients_ration.pdf}
-\caption{Communication density related to the logging capacity}
-\label{fig:g_density}
-\end{figure}
-
-TODO BLABLABLA SU DENSITY

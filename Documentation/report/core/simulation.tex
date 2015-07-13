@@ -31,6 +31,13 @@ communicates in a simulated computer network. Moreover we could
 avoid the oversimplification of the system that could have been occurred
 with a custom implementation.
 
+\begin{figure}[H]
+    \centering
+    \includegraphics[scale=0.25]{shadow.png}
+    \caption{Shadow internal architecture overview.}
+    \label{fig:shadow}
+\end{figure}
+
 Applications are executed inside the shadow simulator through 
 dynamic libraries called plug-ins. 
 These plug-ins are interfaces used by shadow to trace a
@@ -55,40 +62,12 @@ We implemented three shadow plug-ins and their relative applications
 order to experiment a time analysis attack scenario. Our plug-ins and
 the attack scenario will be illustrated in the next paragraphs.
 
-%TODO: find some pictures
 \subsection{Simulation Scenario}
 \begin{figure}[H]
     \centering
-    \includegraphics[scale=0.33]{scenario.png}
+    \includegraphics[scale=0.30]{scenario.png}
     \caption{Time analysis attack simulation scenario.}
     \label{fig:scenario}
-\end{figure}
-
-\begin{figure}[H]
-	\begin{sequencediagram}
-		\newthread{stc}{SimpleTcp}
-		\newinst{ac}{Autosys}
-		\newinst{tc}{TOR daemon}
-		\newinst[1]{ts}{TOR exit node}
-		\newinst[1]{as}{Autosys}
-		\newinst{sts}{SimpleTcp}
-		\newinst[1]{log}{Logger}
-
-		\begin{call}{stc}{}{ac}{}
-			\mess{ac}{Trace}{log}
-			\begin{call}{ac}{}{tc}{}
-			\begin{call}{tc}{\includegraphics[scale=0.2]{tor.jpg}}{ts}{\includegraphics[scale=0.2]{tor.jpg}}
-			\begin{call}{ts}{}{as}{}
-			\mess{as}{Trace}{log}
-			\begin{call}{as}{}{sts}{}
-			\end{call}
-			\end{call}
-			\end{call}
-			\end{call}
-		\end{call}
-	\end{sequencediagram}
-\label{fig:simpletcpsummary}
-\caption{Summarization of the behaviour of the plug-ins system (only one connection of the simpleTcp plugin)}
 \end{figure}
 
 The figure \ref{fig:scenario} shows an outline of the simulation
@@ -151,6 +130,34 @@ clients connections
  to incoming server connections. We will see in the next
 paragraph how this application can be used to simulate a time analysis
 attack.
+\begin{figure}[H]
+	\begin{sequencediagram}
+		\newthread{stc}{SimpleTcp}
+		\newinst{ac}{Autosys}
+		\newinst{tc}{TOR daemon}
+		\newinst[1]{ts}{TOR exit node}
+		\newinst[1]{as}{Autosys}
+		\newinst{sts}{SimpleTcp}
+		\newinst[1]{log}{Logger}
+
+		\begin{call}{stc}{}{ac}{}
+			\mess{ac}{Trace}{log}
+			\begin{call}{ac}{}{tc}{}
+			\begin{call}{tc}{\includegraphics[scale=0.2]{tor.jpg}}{ts}{\includegraphics[scale=0.2]{tor.jpg}}
+			\begin{call}{ts}{}{as}{}
+			\mess{as}{Trace}{log}
+			\begin{call}{as}{}{sts}{}
+			\end{call}
+			\end{call}
+			\end{call}
+			\end{call}
+		\end{call}
+	\end{sequencediagram}
+\label{fig:simpletcpsummary}
+\caption{Summarization of the behaviour of the plug-ins system (only one connection of the simpleTcp plugin)}
+\end{figure}
+
+
 \subsection{Autosys plug-in}
 To analyze the tor network traffic we need, at least, some information about
 the incoming and the outgoing connections.\\
