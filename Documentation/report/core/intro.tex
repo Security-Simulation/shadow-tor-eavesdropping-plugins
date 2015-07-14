@@ -1,47 +1,42 @@
 \section{Introduction}
-Protecting data privacy on the Web is a very hot topic nowadays. 
+The protection of data privacy on the Web is a very hot topic nowadays. 
 Users of the Web may want to surf without the risk that their personal
-informations can be read by other users. %TODO and governal agencies
-%that may be also intersted in our data, cite the article about it
+information can be read by other non authorized users. 
 One of the most largely-used
 architecture for this purpose is the \emph{Onion Routing} and its
-protocol implementation: \emph{Tor}\cite{dingledine2004tor}. In fact, the latter is modeled with
-several techniques with the aim to provide communication security and
+protocol implementation: \emph{Tor}\cite{dingledine2004tor}. 
+In fact, the aim of the latter is to provide communication anonymity and
 data privacy to its network users. Anyway there have been recent papers
- pointing out the Tor's vulnerabilities. %TODO ref these papers
+ pointing out the Tor vulnerabilities\cite{salo2010recent}.
  As the Tor community itself stages, ``Tor does not provide protection
  against end-to-end timing attacks''\cite{toroverview}, thus the
  chance for an attacker to eavesdrop a Tor communication traffic and
  discover the users involved in it by a
- timing analysis is a well known vulnerability of Tor. 
+ time analysis is a well known vulnerability of Tor. 
  
  In this kind of analysis, in order to
  identify the source of a communication, the attacker should be able to
  trace the outgoing traffic and the incoming traffic from both the
  entering and exiting node of the communication path.
- Clearly a timing analysis is feasible only under a certain amount of
+ Clearly a time analysis is feasible only under certain 
  conditions that are often hard to satisfy. As instance, discovering
  that a generic user $U$ is connecting to a server $S$ over a Tor
  communication may require tracing the traffic of many users in the
  network, as the
  attacker cannot know which users may be interested in connecting with
  $S$. Also, there may be the need of tracing more than just the
- interested server because the attacker can find a better time
+ interested server as, for example, an attacker would be able to find a better time
  relation between the user $U$ and another server $S'$ than between $U$
- and the interested server $S$, thus the attacker could exclude $U$ to be a possible
+ and the interested server $S$, thus excluding $U$ to be a possible
  connection source for $S$.
  In the section
  \ref{sec:tor} we will better describe how Tor works and how the
  end-to-end timing attack could be performed.
  
  In order to test the feasibility and the parameters involved in
- a time analysis attack over the Tor network, we set up a simulation
+ a time analysis based attack over the Tor network, we set up a simulation
  scenario in which a series of simulation runs have been performed and some interesting
  empirical results have been taken out and analyzed.
- At the end we will point out how the Tor time analysis vulnerability can be
+ At the end we will point out how this kind of Tor vulnerability can be
  critical and we will introduce some proposals to enhance Tor with the
- view of preventing this kind of attacks. %TODO cite the proposals (one
- %of them http://www.ohmygodel.com/publications/usersrouted-ccs13.pdf
- 
- %TODO Introduce the simulation work, made to understand how
- %much Tor can be vulnerable
+ view of preventing this kind of attacks.

@@ -6,7 +6,7 @@ the simulation scenario) to the post-processing data analysis.
 
 Thus, after a bunch of simulation runs handled as previously explained,
  we performed a data analysis in order to
-figure out the effectiveness of a time analysis attack.  
+figure out the effectiveness of a time analysis based attack.  
 
 In this section we will illustrate the software tools we used for
 handling the
@@ -15,10 +15,10 @@ Eventually we will
 present the empirical results
 obtained.
 \subsection{Netbuilder and Launcher Scripts}
-As described in \ref{sec:Shadow}
-The Shadow simulator use a XML file to describe the network,
+As described in section \ref{sec:Shadow}
+the Shadow simulator use a XML file to describe the network,
 we automatize this process with a python script called the net-builder script.\\
-This script will so build a scenario based on some input parameters as:
+This script will so build a scenario based on some input parameter as:
 \begin{itemize}
 \item The number of TOR relays in the simulation.
 \item The number of TOR exit nodes in the simulation.
@@ -32,11 +32,11 @@ of the TOR relays/exit-nodes} nodes in the simulation.
 \item The density of the network-requests.
 \end{itemize}
 
-When the others parameters are self-esplicative, the density parameter is somewhat
+When the other parameters are self-esplicative, the density parameter is somewhat
 that deserves more that two words on.
 This parameter specify the time interval between every connection made from the
 simpletcp plug-in to emulate the behaviour of different type of networks.
-We defined three behaviours to our network study:
+We defined three behaviours for our network study:
 
 \begin{itemize}
 \item Slow:\\minimum: a mean of 800 milliseconds of sleep time between every connection,\\
@@ -83,8 +83,9 @@ From this algorithm we can see that we can use this script to create a set of
 simulations with some linear modifications to the numbers of the traced clients
 or the number of the traced servers (or a combination of the two).
 We can also declare more than one run on this bunch of simulations, this can
-be useful to compute the mean values from the same configuration file, else we
-can generate a new configuration file starting from some input parameters.
+be useful to compute the average values of the simulation results as the runs
+will use the same configuration file, or we
+can also assign a new configuration file to each run using some input parameter.
 
 After the launch we can pass the simulation raw data to the analyzer script.
 
@@ -123,7 +124,7 @@ c;client2;1421827747
 \end{figure}
 The script scans the log file and for each line checks whatever the entry is
 related to a client or a server. If the entry refers to a client
-connection request it scans in a nestled loop the server connection entries
+connection request it scans, in a nested loop, all the server connection entries
 that may be related to that client. The nested loop does not scan the whole
 file until its end, but it stops after a sufficient amount of
 read entries. In particular, the amount of entries to be read is
@@ -134,8 +135,9 @@ than a fixed threshold $thr_{max}$. For our experiment we chose a limit of 6
 seconds as it is an enough high latency
 value for a connection acceptance. Likely, the average latency for a
 connection response, even passing through the Tor network, is
-considerably smaller than 6 seconds but anyway we can over-esteem a bit this
-value without unexpected bad consequences. On the other hand, an under-esteem of
+considerably smaller than 6 seconds but anyway we can over-estemate a bit this
+value without unexpected bad consequences. On the other hand, an
+under-estimation of
 this value would threaten the analysis results. 
 
 Furthermore, from a client
@@ -194,7 +196,7 @@ closer to $thr_{min}$ meaning that the likelihood of a server
 candidate to be the real server for the related client decreases when
 the server connection acceptance attempted far from 100ms. 
 
-Another fact that may be considered in a timing analysis is that if a server accepts a
+Another fact that may be considered in a time analysis is that if a server accepts a
 connection request from a client after a certain time $\Delta_t$, that
 server will likely accept again another connection from the same client
 after a time that is close to $\Delta_t$ if the Tor communication path is the same as
@@ -240,10 +242,10 @@ latencies often differs between each-others.
 The analyzer script also collects information about the
 real connections logged by the simple-tcp applications. With this
 information the analyzer can tell us how much the estimated results are
-close to the real ones. Obviously, in a real time analysis attack the real connections
+close to the real ones. Obviously, in a real time analysis based attack the real connections
 information cannot be obtain by the client and server applications themselves 
 but in a simulation environment, we can better figure out how a real
-time analysis attack may be effective.
+time analysis based attack may be effective.
 
 Moreover by a set of simulations
 that provide the use of the real connections logged data an attacker
@@ -285,7 +287,7 @@ connections:
 \State $matched\_portion \gets matched\_clients / traced\_clients$
 
 \end{algorithmic}
-\label{alg:launcher}
+\label{alg:maccuracy}
 \end{algorithm}
  
 The $accuracy_c$ contribution is calculated as the distance between the 
@@ -299,44 +301,9 @@ In the next paragraph we will look in details both the
 $matched\_accuracy$ and the
 $matched\_portion$
 results obtained in different situations in order to understand how a
-time analysis attack can be effective.
+time analysis based attack can be effective.
 
 \subsection{Empirical Results}
-In order to retrieve an interesting results set we decided to conduct
-3 different simulation macro-bunches with the following characteristics:
-\begin{enumerate}
-	\item The number of traced clients was fixed to almost 100\% of the
-network and the number of traced server was increasing by one to another
-simulation starting from 0 and ending to the 100\% of the network.
-	\item The number of traced servers was fixed to almost 100\% of the
-network and the number of traced clients was increasing by one to another
-simulation starting from 0 and ending to the 100\% of the network.
-	\item Both numbers of traced clients and traced servers (traced
-network portion) was increasing by one to another
-simulation starting from 0 and ending to the 100\% of the network.
-\end{enumerate}
-
-Each macro-bunch was executed 4 times in order to understand the results
-average and their errors. 
-Also, for each of those simulation macro-bunches, 10 simulation sub-bunches were
-launched in order to provide a sufficient granularity in the traced
-entities escalation. Moreover for each sub-bunch 3 simulations were
-executed with 3 different values of the connections density: \textbf{slow},
-\textbf{average}, \textbf{fast}. 
-
-Each simulation run was executed on a dedicated machine which included
- eight 64bit CPU cores at 2.6 GHz and 16GB of RAM. Each simulation
-macro-bunch took around 30 hours, thus the whole simulation process took
-around 360 hours with a total of around 360 simulation single runs.
-Despite the long simulation time used, the network size numbers are not
-so exciting: for every simulation run the network included 700 clients
-and 10 servers. As already announced before, this computational limit is
-caused by the use of real Tor applications even if the network was
-virtualized. One of the most essential point for future works would be to
-conduct the experiments with a more powerful dedicated hardware testing
-if the results observed in this phase would properly scale in a bigger
-simulation network. 
-
 \begin{figure}
 	\begin{subfigure}{.5\textwidth}
 		\centering
@@ -367,32 +334,41 @@ simulation network.
 	\caption{Matched portion charts}
 	\label{fig:g_mport}
 \end{figure}
+In order to retrieve an interesting results set we decided to conduct
+3 different simulation macro-bunches with the following characteristics:
+\begin{enumerate}
+	\item The number of traced clients was fixed to almost 100\% of the
+network and the number of traced server was increasing by one to another
+simulation starting from 0 and ending to the 100\% of the network.
+	\item The number of traced servers was fixed to almost 100\% of the
+network and the number of traced clients was increasing by one to another
+simulation starting from 0 and ending to the 100\% of the network.
+	\item Both numbers of traced clients and traced servers (traced
+network portion) was increasing by one to another
+simulation starting from 0 and ending to the 100\% of the network.
+\end{enumerate}
 
-The figure set \ref{fig:g_mport} shows some charts about the matched
-portion results. More specifically the figure \ref{fig:g_mporta}, shows
-the test with the fixed number of traced clients and the variable number
-of traced servers. As we can see the matched portion is almost linearly 
-dependent by the number of traced servers.
-This behavior was expected, in fact with a small amount of traced
-servers most of the clients would not find their right server as its
-connections are probably not logged. Also, it is interesting that
-increasing the connections density (\ref{fig:g_mportb}) the function
-trend seems to be more precise. This may be given by the fact that the
-$gap_{AVG}$ tends to be more accurate increasing the number of
-connections in the same temporal window, thus increasing the score of
-the right
-servers. Anyway it is comforting that while increasing the
-connections density, the best candidate estimation does not seem to be affected by the 
- connections noise coming from the other server candidates.
-Figures \ref{fig:g_mportc} and \ref{fig:g_mportd} show the experiments
-with a fixed number of traced servers at 100\% and a variable number of
-traced clients. We can see
-that the matched portion tends to be constant around 80\% (as it was in
-figure \ref{fig:g_mporta} with a hight portion of traced servers) at the variation of
-the number of traced clients. This was also expected as the analysis is
-conducted from the clients side (it searches the right servers of the
-traced clients) and the matched portion is thus relative to the
-number of traced clients. 
+Each macro-bunch was executed 4 times in order to understand the results
+average and their errors. 
+Also, for each of those simulation macro-bunches, 10 simulation sub-bunches were
+launched in order to provide a sufficient granularity in the traced
+entities escalation. Moreover for each sub-bunch 3 simulations were
+executed with 3 different values of the connections density: \textbf{slow},
+\textbf{average}, \textbf{fast}. 
+
+Each simulation run was executed on a dedicated machine which included
+ eight 64bit CPU cores at 2.6 GHz and 16GB of RAM. Each simulation
+macro-bunch took around 30 hours, thus the whole simulation process took
+around 360 hours with a total of around 360 simulation single runs.
+
+Despite the long simulation time used, the network size numbers are not
+so exciting: for every simulation run the network included 700 clients
+and 10 servers. As already announced before, this computational limit is
+caused by the use of real Tor applications even if the network was
+virtualized. One of the most essential point for future works would be to
+conduct the experiments with a more powerful dedicated hardware testing
+if the results observed in this phase would properly scale in a bigger
+simulation network. 
 
 \begin{figure}
 \begin{subfigure}{.5\textwidth}
@@ -424,6 +400,35 @@ number of traced clients.
 	\caption{Matched accuracy charts}
 	\label{fig:g_maccuracy}
 \end{figure}
+
+The figure set \ref{fig:g_mport} shows some charts about the matched
+portion results. More specifically the figure \ref{fig:g_mporta}, shows
+the test with the fixed number of traced clients and the variable number
+of traced servers. As we can see the matched portion is almost linearly 
+dependent by the number of traced servers.
+This behavior was expected, in fact with a small amount of traced
+servers most of the clients would not find their right server as its
+connections are probably not logged. Also, it is interesting that
+increasing the connections density (\ref{fig:g_mportb}) the function
+trend seems to be more precise. This may be given by the fact that the
+$gap_{AVG}$ tends to be more accurate increasing the number of
+connections in the same temporal window, thus increasing the score of
+the right
+servers. Anyway it is comforting that while increasing the
+connections density, the best candidate estimation does not seem to be affected by the 
+ connections noise coming from the other server candidates.
+
+Figures \ref{fig:g_mportc} and \ref{fig:g_mportd} show the experiments
+with the 100\% of traced servers and a variable number of
+traced clients. We can see
+that the matched portion tends to be constant around 80\% (as it was in
+figure \ref{fig:g_mporta} with a hight portion of traced servers) at the variation of
+the number of traced clients. 
+
+This was also expected as the analysis is
+conducted from the clients side (it searches the right servers of the
+traced clients) and the matched portion is thus relative to the
+number of traced clients. 
 
 The charts shown in figure \ref{fig:g_maccuracy} shows the matching
 accuracy results in the same order of the matched portion experiment
@@ -479,8 +484,10 @@ tests where both traced servers and traced clients were variable
 (variable traced portion). This
 represents the most realistic scenario and we can notice that the
 matched portion trend seems to respect the sum of the trend results of the other
-two experiments (figure \ref{fig:g_mport}). We can see that a
-timing analysis attacker should be interested to trace as much Tor
+two experiments (figure \ref{fig:g_mport}). 
+
+We can see that a
+timing attacker should be interested to trace as much Tor
 network node as possible as the matched portion almost
 linearly scales with the traced portion. As instance if an attacker is
 able to trace an half of the Tor network nodes he may understand the
@@ -547,4 +554,4 @@ maximize the ''matching set``, trying to reach the matched portion
 results, and maximizing the amount of
 trusting. More tests and considerations about these aspects may be
 proposed in future works.
-
+\newpage
