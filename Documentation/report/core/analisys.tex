@@ -15,6 +15,7 @@ Eventually we will
 present the empirical results
 obtained.
 \subsection{Netbuilder and Launcher Scripts}
+\label{sec:netbuilder}
 As described in section \ref{sec:Shadow}
 the Shadow simulator use a XML file to describe the network,
 we automatize this process with a python script called the net-builder script.\\
@@ -141,21 +142,21 @@ under-estimation of
 this value would threaten the analysis results. 
 
 Furthermore, from a client
-entry the nestled scan starts reading from the entry that is 100 ms far
-from the client start point. This lower threshold, $thr_{min}$, is needed in order to
+entry, called start point, the nested scan starts reading from the entry that is 100 ms far
+from that start point. This lower threshold, $thr_{min}$, is needed in order to
  filter those server entries that registered a connection time-stamp
-that results too young for being related to the client start point. This                        % GRAMMAR young? Isn't low or fresh better?
-lower limit is more critical: a too low limit would guarantee false                             % GRAMMAR guarantee? Isn't "lend us to" better?
+that results too fresh for being related to the client start point. This
+lower limit is more critical: a too low limit would lead the analysis to false
 positive results and a too high limit would drop the right results.
 We chose a value of 100ms as it seemed to maximize 
 the clients servers relation matching. Anyway a more accurate search
-phase of this threshold parameter may be carried out in future works.
+phase for this threshold parameter may be carried out in future works.
 
 The analysis proceeds by recording a set of possible server candidates 
- per each client connection request. Each server candidate $s$ assumes a                        % GRAMMAR per each seems wrong to me, "for each" or "per"?
+ for each client connection request. Each server candidate $s$ assumes a
 $pmatch(creq,s)$ value which
 indicates how much a server candidate can be the real
-\footnote{The term ''real`` should not be misunderstood with
+\footnote{The term ``real'' should not be misunderstood with
 non-simulated but should be intended as non-estimated.}
  server that
 accepted the $creq$
@@ -165,16 +166,16 @@ as following:
 pmatch(creq, s) = 1 - \frac{\Delta_t(creq, s) - thr_{min}}{thr_{max} - thr_{min}}
 \end{equation}
 where $\Delta_t(creq, s)$ is the time distance between the entry
-time-stamp of the server $s$ related to the entry time-stamp of the client connection request   % GRAMMAR related? Isn't "and" better? (between is a relation)
+time-stamp of the server $s$ and the entry time-stamp of the client connection request 
 $creq$.
 
-As instance let us consider the server candidates related to the first
+As instance let us consider the server candidates that may be related to the first
 client entry, $client10$, of the example log
 fragment shown in figure \ref{fig:example_log_file}: 
 $server7$ is not considered at all in the $pmatch$ calculation  as
 $\Delta_t$ 
-is lesser than $thr_{min}$; then the $pmatch$ values for the first server
-candidates related to the client request c;client10;1420000000 are shown in figure \ref{fig:pmatch}:
+is lesser than $thr_{min}$. 
+
 \begin{figure}[h]
 \begin{lstlisting}[language=bash,frame=single, numbers=left]
 candidate 	pmatch
@@ -187,34 +188,36 @@ server3  	0.769
 server0  	0.794
 ...
 \end{lstlisting}
-\caption{$pmatch$ values for server candidates related to $client10$}
+\caption{$pmatch$ values of the first server candidates for the client
+request $c;client10;1420000000$}
 \label{fig:pmatch}
 \end{figure}
 
 Clearly the $pmatch$ probability is higher when the server connection is
-closer to $thr_{min}$ meaning that the likelihood of a server
-candidate to be the real server for the related client decreases when
-the server connection acceptance attempted far from 100ms.                                      % GRAMMAR attempted? Isn't "go far from the 100ms threshold" (or threshold min so we are relative) better?
+closer to $thr_{min}$, meaning that the likelihood of a server
+candidate to be the real server for the considered client connection
+request decreases when
+the server connection acceptance goes far from 100ms. 
 
 Another fact that may be considered in a time analysis is that if a server accepts a
 connection request from a client after a certain time $\Delta_t$, that
 server will likely accept again another connection from the same client
 after a time that is close to $\Delta_t$ if the Tor communication path is the same as
-before\footnote{If the connections are going to the same server, the Tor
+before\footnote{If the connections are related to the same server, the Tor
 daemon could reuse the same old Tor communication path for a maximum
-than 10 minutes\cite{tormanual}.}.                                                              % GRAMMAR than? Isn't "maximum of 10 minutes" better?
+of 10 minutes\cite{tormanual}.}.                                                             
 Thus, as the $pmatch$ is defined as the $\Delta_t$ normalization, 
-let us define the $gap$ average related to a                                                    % GRAMMAR Let us? Isn't "we defined" better?
+let us define the $gap$ average related to a 
 server $s$ that is a candidate for a client $c$ as follows:
 
 \begin{equation}
 \label{eq:gap}
- gap_{AVG}(c,s) = \frac{\sum_{i=0}^{N(c,s)} | pmatch(creq_{i+1},s) -
+ gap_{AVG}(c,s) = \frac{\sum\limits{N(c,s)}{i=0} | pmatch(creq_{i+1},s) -
 pmatch(creq_{i},s)
 |}{N(c,s)}
 \end{equation}
 
-where $N(c,s)$ is the number of $c$ connection requests that have been likely                   % GRAMMAR uppercase W
+where $N(c,s)$ is the number of $c$ connection requests that have been likely 
 accepted from $s$.
 
 
@@ -222,41 +225,37 @@ At the end of the scan phase, each client collects a set of server
 candidates with their relative average $gap$ and $score$ that is defined
 as follows:
 \begin{equation}
-	score(c,s) = \frac{\sum_{i=0}^{N(c,s)} pmatch(creq_{i},s)}{gap_{AVG}(c,s) + 1}
+	score(c,s) = \frac{\sum\limits^{N(c,s)}{i=0} pmatch(creq_{i},s)}{gap_{AVG}(c,s) + 1}
 \end{equation}
 
 After that every server candidate related to a certain client gained
-their own score, they are sorted, in a descending order, by the score                           % GRAMMAR "they are sorted in descending order" without comma.
+their own score, they are sorted in a descending order by the score
 itself. The first of the list is elected as the best candidate to be the
 right server that accepted the connection requests from its corresponding
 client.
 
-Let us notice that a candidate score highly depends by the number of connection                 % GRAMMAR Let us notice that? Isn't "As we can notice.."
-acceptances estimated for that candidate as by as the $pmatch$ sum gained,
-meaning that more connection acceptances of a server are close to the client
-requests (plus the $thr_{min}$) more the score for that server is high.
+Let us notice that a candidate score is directly related to the number
+of its connections and to its $pmatch$ sum gained.
 Also, the score is highly attenuated by the $gap_{AVG}$ if the connection
-latencies often differs between each-others.
+latencies frequently differs between each-others.
 
 
 The analyzer script also collects information about the
 real connections logged by the simple-tcp applications. With this
 information the analyzer can tell us how much the estimated results are
-close to the real ones. Obviously, in a real time analysis based attack the real connections
-information cannot be obtain by the client and server applications themselves                   % GRAMMAR obtain? Isn't obtained better?
-but in a simulation environment, we can better figure out how a real                            % GRAMMAR better figure out? Isn't "figure out better" better? (yeah! Repetitions in grammar comments!)
-time analysis based attack may be effective.
+close to the real ones. Obviously, in a real attack the connections
+information cannot be obtained by the client and server applications themselves
+but, in a simulation environment, we can better figure out how a time
+analysis based attack may be effective in the real world.
 
 Moreover by a set of simulations
-that provide the use of the real connections logged data an attacker
-may be able to understand the matching accuracy of the analysis, how distinguish the
+an attacker may be able to understand the matching accuracy of the analysis, how distinguish the
 matched servers among the others and also evaluate some
 parameters like $thr_{min}$ and $thr_{max}$ before 
 experimenting the attack in a real scenario. 
 With this in mind, the script
 calculates the $matched\_accuracy$, a parameter that indicates how much
-the matching of the right server (those that correspond with the real
-data) is correct in terms of identified
+the selection of the best candidate server of each client is correct in terms of identified
 connections:
 
 \begin{algorithm}[H]
@@ -275,7 +274,6 @@ connections:
 		{\footnotesize \Comment The number of real connections between $c$ and $s$}
 
 		\State $accuracy_c \gets \frac{ MIN(M, N)}{MAX(M, N)}$
-	\State \textbf{break}
 	\EndIf
 	\If {$accuracy_c$}
 		\State $matched\_clients \gets matched\_clients + 1$
@@ -292,9 +290,9 @@ connections:
  
 The $accuracy_c$ contribution is calculated as the distance between the 
 amount of the estimated matched connections
-and the amount of the real connections.
+and the amount of the real connections for the couple $c$, $s$.
 The last but not least parameter is the $matched\_portion$ that indicates
-how many traced clients found their right server.                                               % GRAMMAR "right server"? Is not the client that find the server...is the analysis that guess a server for a client, we may need to rewrite this phrase.
+how many traced clients found their real server.
 
 
 In the next paragraph we will look in details both the
@@ -334,43 +332,44 @@ time analysis based attack can be effective.
 	\caption{Matched portion charts}
 	\label{fig:g_mport}
 \end{figure}
-In order to retrieve an interesting results set we decided to conduct
+In order to retrieve an interesting result set we decided to conduct
 3 different simulation macro-bunches with the following characteristics:
 \begin{enumerate}
-	\item The number of traced clients was fixed to almost 100\% of the                           % GRAMMAR almost looks like somewhat imprecise (in all this enumerate)
-network and the number of traced server was increasing by one to another
-simulation starting from 0 and ending to the 100\% of the network.
-	\item The number of traced servers was fixed to almost 100\% of the
-network and the number of traced clients was increasing by one to another
-simulation starting from 0 and ending to the 100\% of the network.
+	\item The number of traced clients was fixed to the 100\% of the
+network and the number of traced server was increased at each simulation
+starting from 0\% until reaching the 100\% of the network.
+	\item The number of traced servers was fixed to the 100\% of the
+network and the number of traced clients was increased at each simulation
+starting from 0\% until reaching the 100\% of the network.
 	\item Both numbers of traced clients and traced servers (traced
-network portion) was increasing by one to another
-simulation starting from 0 and ending to the 100\% of the network.
+network portion) was increased at each simulation
+starting from 0\% until reaching the 100\% of the network.
 \end{enumerate}
 
-Each macro-bunch was executed 4 times in order to understand the results
-average and their errors. 
+Each macro-bunch was executed 4 times in order to compute the results
+average. 
 Also, for each of those simulation macro-bunches, 10 simulation sub-bunches were
 launched in order to provide a sufficient granularity in the traced
-entities escalation. Moreover for each sub-bunch 3 simulations were
+entities escalation. Moreover for each sub-bunch 3 simulations were 
 executed with 3 different values of the connections density: \textbf{slow},
-\textbf{average}, \textbf{fast}. 
+\textbf{average}, \textbf{fast} (described in paragraph
+\ref{sec:netbuilder}). 
 
-Each simulation run was executed on a dedicated machine which included                          % GRAMMAR included? Isn't "was composed of" better?
- eight 64bit CPU cores at 2.6 GHz and 16GB of RAM. Each simulation
-macro-bunch took around 30 hours, thus the whole simulation process took
-around 360 hours with a total of around 360 simulation single runs.
+Each simulation run was executed on a dedicated machine which is
+composed of eight 64bit CPU cores at 2.6 GHz and 16GB of RAM. Each simulation
+macro-bunch took almost 30 hours, thus the whole simulation process took
+approximately 360 hours with a total of 360 simulation single runs.
 
 Despite the long simulation time used, the network size numbers are not
 so exciting: for every simulation run the network included 700 clients
 and 10 servers. As already announced before, this computational limit is
 caused by the use of real Tor applications even if the network was
-virtualized. One of the most essential point for future works would be to                       % GRAMMAR Isn't "...would be the replication of the experiments with..." better?
-conduct the experiments with a more powerful dedicated hardware testing
+virtualized. One of the most essential point for future works would be
+the replication of the experiments with a more powerful dedicated hardware testing
 if the results observed in this phase would properly scale in a bigger
 simulation network. 
 
-\begin{figure}
+\begin{figure}[H]
 \begin{subfigure}{.5\textwidth}
 		\centering
 		\includegraphics[width=1\linewidth]{graphs/s_server_pmatch_average_only.pdf}
@@ -426,22 +425,22 @@ figure \ref{fig:g_mporta} with an high portion of traced servers) at the variati
 the number of traced clients. 
 
 This was also expected as the analysis is
-conducted from the clients side (it searches the right servers of the                           % GRAMMAR right server again, isn't relative server node better?
-traced clients) and the matched portion is thus relative to the                                 % GRAMMAR of the traced clients, isn't for the traced clients (if we will decide to use "right server").
+conducted from the clients side (it searches the relative server node
+for the traced client) and the matched portion is thus relative to the 
 number of traced clients. 
 
-The charts shown in figure \ref{fig:g_maccuracy} shows the matching
+The charts plotted in figure \ref{fig:g_maccuracy} show the matching
 accuracy results in the same order of the matched portion experiment
 shown in figure \ref{fig:g_mport}. Clearly the matched accuracy is
 almost constant around its maximum value, meaning that the clients who
-correctly found their best candidates matched almost all the connections
+correctly found their best candidates, matched almost all the connections
 from those servers. Moreover the matching accuracy does not
 depend from any of the factors considered: traced clients number, traced
 servers number and connections density.
 
 
 
-\begin{figure}
+\begin{figure}[H]
 	\centering
 	\includegraphics[scale=0.35]{graphs/density_clients_ration.pdf}
 	\caption{Communication density related to the logging capacity}
@@ -449,19 +448,20 @@ servers number and connections density.
 \end{figure}
 
 Even if the connections density does not seem to highly interfere with
-the matched portion and the matched accuracy, an important event must be
+the matched portion and the matched accuracy an important event must be
 considerate looking at the figure \ref{fig:g_density}, which shows the
-percentage of clients and servers actually logged by the analyzer plug-in on the                % GRAMMAR on? Isn't "over" better?
+percentage of clients and servers actually logged by the analyzer
+plug-in over the
 number of clients and servers declared as to be traced. We can notice
-that increasing the connections density the logging capacity diminishes.
-This behaviour is given simply because the logger entity is centralized                         % GRAMMAR given? Isn't "...behaviour is present because" better?
+that if the densisty of connections increases then the logging capacity diminishes.
+This behaviour is present because the logger entity is centralized 
 in one server that suffers while trying to log all the UDP packets
 coming from every node. That is why in a real
 scenario an attacker with enough resources may consider to distribute 
 the logging workload on more
 entities.
 
-\begin{figure}
+\begin{figure}[H]
 	\begin{subfigure}{.5\textwidth}
 		\centering
 		\includegraphics[width=1\linewidth]{graphs/cs_tport_mport.pdf}
@@ -498,7 +498,7 @@ may be able to correctly understand the end-points of almost all the connections
 
 
 
-\begin{figure}
+\begin{figure}[H]
 	\begin{subfigure}{.5\textwidth}
 		\centering
 		\includegraphics[width=1\linewidth]{graphs/map_cs_4_average.pdf}
@@ -528,29 +528,33 @@ variable, taken as
 examples. In particular in the map \ref{fig:g_tmatcha} the traced
 portion was at the 40\% of the Tor network while in the map
 \ref{fig:g_tmatchb} the traced portion was at the 90\% of the entire
-network. The maps show the gap delta, which is the difference between
-the gap of the best
-candidate and the gap of its successor in the candidate list,  in
-relations with the score delta, same as for the gap, and the number of
+network. 
+
+The maps show the gap delta in
+relations with the score delta and the number of
 connections that have been assigned to the best candidate. 
+The gap delta is the difference between the gap of the best candidate
+and the gap of its successor in the candidates list.
+Similarly, the score delta is the difference between the score of the
+best candidate and the score of its successor in the candidates list.
 Also, the triangle points are the best candidate that found a matching
 with the real connection while the circle points are the 
 best candidates that did not find a matching.
 Interestingly, mostly all the circles are situated in the bottom left
 area with a black or dark blue colour. This suggests that an attacker
-may consider to use these parameter in order to distinguish which
+may consider to use these parameters in order to distinguish which
 clients have found a matching. As instance in a real scenario one may
 think to consider as $matched$ only those best candidates that got a
 score delta higher than 30 or those best candidates that got a score
 delta higher than 15 but a gap delta higher than 0.03 and found more
 than 40 connections. We can name this set of filtered best candidates as
-the ''trusted matchings set`` where the trusting increases while moving
+the ``trusted matching set'' where the trusting increases while moving
 upper right in the map and to the yellow in the color range. Even just
 considering the score delta would be enough to collect the
 $matched$ best candidates only, anyway an attacker may decide to enlarge
-the trusted matchings set relaxing the score delta threshold and
+the trusted matching set relaxing the score delta threshold and
 considering the other parameters. Indeed there is a trade-off between
-maximize the ''matching set``, trying to reach the matched portion
+maximize the ``matching set'', trying to reach the matched portion
 results, and maximizing the amount of
 trusting. More tests and considerations about these aspects may be
 proposed in future works.

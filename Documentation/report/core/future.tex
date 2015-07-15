@@ -1,17 +1,18 @@
 \section{Future Works}
 As we stated in the previous sections, this study only cover a little part of
-the big field of the timing-analysis attacks\footnote{Or, more in general, side
+the big field of the time analysis attacks\footnote{Or, more in general, side
 channel attacks; There is a specific field in cryptanalysis that study this kind
-of attacks.} so this work haven't covered some interesting points and study that
+of attacks.} so this work have not covered some interesting points and
+studies that
 can refine or give some more efficient countermeasures to the problem.
 \\\\
 One of the interesting future works is the test and a benchmark
 of the so-called \emph{Astoria}\cite{starov2015measuring} Tor client.
 That client rethink
-the path-selection algorithm of the standard tor clients to avoid the kind of
-attacks we described here, that algorithm operates on an upper level that choose
-the routers minimizing the risk that two nodes falls under the realm of the same
-autonomous system.
+the path-selection algorithm of the standard Tor clients to avoid the kind of
+attacks we described here. That algorithm operates on an upper level
+where chooses the routers in order to minimize the risk that two nodes fall under 
+the realm of the same autonomous system.
 \\\\
 Another future work is the comparison of the impact of the attack described above
 between the Tor network and the other anonymous network implementations like i2p or freenet.
@@ -24,16 +25,16 @@ this can be a starting point to make an efficient non-low latency onion routing
 network. Or, hopefully, a powerful mix of the two implementations.
 \\\\
 An implementation work related to our model can be the modification
-of the simpletcp plug-in to make it capable of connecting and download from
+of the simpletcp plug-in to make it capable of connecting to
 multiple servers in a single instance, and the changes
-required to the analysis method/algorithm to trace that kinds of connections.
+required to the analysis method/algorithm to trace that kind of connections.
 \\\\
 The score delta driven analysis seems to be really promising from the data collected
 in this study, this can be a good way to prove the full power of the attack or
-to develop a tool to deface Tor anonymity and prove by example the security or
+to develop a tool to deface Tor anonymity and prove by example the security 
 level of the system.
 \\\\
-As a side note, this experiments can be repeated with a bigger tor
-network, but, as what transpire from the paper\emph{AS-awareness in Tor
-path selection}\cite{edman2009awareness} this problem is not related to
+As a side note, these experiments can be repeated with a bigger Tor
+network, but as what transpire from the paper \emph{AS-awareness in Tor
+path selection}\cite{edman2009awareness}, this problem is not related to
 the proportion of the network.
