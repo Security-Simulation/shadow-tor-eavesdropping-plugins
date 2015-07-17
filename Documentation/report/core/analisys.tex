@@ -212,7 +212,7 @@ server $s$ that is a candidate for a client $c$ as follows:
 
 \begin{equation}
 \label{eq:gap}
- gap_{AVG}(c,s) = \frac{\sum\limits{N(c,s)}{i=0} | pmatch(creq_{i+1},s) -
+ gap_{AVG}(c,s) = \frac{\sum\limits^{N(c,s)}_{i=0} | pmatch(creq_{i+1},s) -
 pmatch(creq_{i},s)
 |}{N(c,s)}
 \end{equation}
@@ -225,7 +225,7 @@ At the end of the scan phase, each client collects a set of server
 candidates with their relative average $gap$ and $score$ that is defined
 as follows:
 \begin{equation}
-	score(c,s) = \frac{\sum\limits^{N(c,s)}{i=0} pmatch(creq_{i},s)}{gap_{AVG}(c,s) + 1}
+	score(c,s) = \frac{\sum\limits^{N(c,s)}_{i=0} pmatch(creq_{i},s)}{gap_{AVG}(c,s) + 1}
 \end{equation}
 
 After that every server candidate related to a certain client gained
