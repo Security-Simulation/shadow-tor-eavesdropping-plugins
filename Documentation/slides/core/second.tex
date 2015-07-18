@@ -19,7 +19,7 @@
 traced servers at each macro bunch run ($ 0\% \rightarrow 100\% $).
 			\item Traced servers fixed to the 100\% and increasing
 traced clients at each macro bunch run ($ 0\% \rightarrow 100\% $).
-			\item Increainsg both traced clients and traced servers (traced
+			\item Increasing both traced clients and traced servers (traced
 		 portion) at each simulation ($ 0\% \rightarrow 100\% $).
 		\end{enumerate}
 
@@ -69,7 +69,7 @@ traced clients at each macro bunch run ($ 0\% \rightarrow 100\% $).
 			
 		\begin{itemize}
 			\item Slow: 800 (mean) - 2000 (mean) milliseconds 			
-			\item Average: 80 (mean)  - 1000 (mean) millisecons
+			\item Average: 80 (mean)  - 1000 (mean) milliseconds
 			\item Fast: 20 (mean) - 100 (mean) milliseconds
 		\end{itemize}
 	\end{frame}			
@@ -284,7 +284,128 @@ $M$:
 		The matched portion indicates how many traced clients 
  			found their real server:
 		\begin{equation}
-			matched\_portion = \frac{matched_clients}{traced_clients}
+			matched\_portion = \frac{matched\_clients}{traced\_clients}
 		\end{equation}
 	\end{frame}
 \subsection{Empirical Results}
+	\begin{frame}{Matched Portion}{Servers traced portion augmenting}
+			\begin{minipage}{.5\textwidth}
+				\includegraphics[scale=0.3]{graphs/s_server_mport_average_only.pdf}
+			\end{minipage}
+			\begin{minipage}{.4\textwidth}
+				\includegraphics[scale=0.3]{graphs/s_server_mport.pdf}
+			\end{minipage}
+	\end{frame}
+	\begin{frame}{Matched Portion}{Clients traced portion augmenting}
+			\begin{minipage}{.5\textwidth}
+				\includegraphics[scale=0.3]{graphs/c_tclient_mport_average_only.pdf}
+			\end{minipage}
+			\begin{minipage}{.4\textwidth}
+				\includegraphics[scale=0.3]{graphs/c_tclient_mport.pdf}
+			\end{minipage}
+	\end{frame}
+	\begin{frame}{Matched Portion}{Details}
+			We can see that the matched portion tends to be constant around 80\% (as with an high portion
+			of traced servers).
+			\begin{minipage}{.5\textwidth}
+				\includegraphics[scale=0.3]{graphs/s_server_mport_average_only.pdf}
+			\end{minipage}
+			\begin{minipage}{.4\textwidth}
+				\includegraphics[scale=0.3]{graphs/c_tclient_mport.pdf}
+			\end{minipage}
+	\end{frame}
+	\begin{frame}{Matched Portion}{Considerations}
+		\begin{itemize}
+			\item This behaviour was expected because the analysis is conducted from the clients side.
+			\item Increasing the connection density the function trend seems to be more precise.
+			\item Linearly dependent by the number of traced servers.
+		\end{itemize}
+	\end{frame}
+	\begin{frame}{Matched Accuracy}{Servers traced portion augmenting}
+		\begin{minipage}{.5\textwidth}
+			\includegraphics[scale=0.3]{graphs/s_server_pmatch_average_only.pdf}
+		\end{minipage}
+		\begin{minipage}{.4\textwidth}
+			\includegraphics[scale=0.3]{graphs/s_server_pmatch.pdf} 
+		\end{minipage}
+	\end{frame}
+	\begin{frame}{Matched Accuracy}{Clients traced portion}
+		\begin{minipage}{.5\textwidth}
+			\includegraphics[scale=0.3]{graphs/c_tclient_pmatch_average_only.pdf}
+		\end{minipage}
+		\begin{minipage}{.4\textwidth}
+			\includegraphics[scale=0.3]{graphs/c_tclient_pmatch.pdf}
+		\end{minipage}
+	\end{frame}
+
+	\begin{frame}{Considered values}{Both portions}
+		\begin{minipage}{.5\textwidth}
+			\includegraphics[scale=0.3]{graphs/cs_tport_mport.pdf}
+		\end{minipage}
+		\begin{minipage}{.4\textwidth}
+			\includegraphics[scale=0.3]{graphs/cs_tport_pmatch.pdf} 
+		\end{minipage}
+	\end{frame}
+
+	\begin{frame}{Considered values}{Considerations}
+		\begin{itemize}
+			\item Most realistic scenario
+			\item Respect the avg sum of the other two experiments
+			\item An attacker should be interested in trace as much Tor network nodes as possible.
+		\end{itemize}
+	\end{frame}
+
+	\begin{frame}{Communication density}{}
+		Does not seems to highly interfere with the matched portion.
+		\begin{center}
+		\includegraphics[scale=0.3]{graphs/density_clients_ration.pdf}
+		\end{center}
+	\end{frame}
+
+	\begin{frame}{How to distinguish correct guesses?}{}
+		\begin{itemize}
+			\item An attacker can, so far, get some maps between servers
+			and clients.
+			\item Let us see a 4 dimensional graph.
+		\end{itemize}
+	\end{frame}
+
+	\begin{frame}{Correct guesses spatial distribution}{}
+		\begin{minipage}{.9\textwidth}
+			\begin{tabular}{c c}
+				\includegraphics[scale=0.275]{graphs/map_cs_4_average.pdf} &
+				\includegraphics[scale=0.275]{graphs/map_cs_9_average.pdf} \\
+				40\% of traced portion &
+				90\% of traced portion
+			\end{tabular}
+		\end{minipage}
+	\end{frame}
+
+	\begin{frame}{Correct guesses spatial distribution}{Considerations}
+		\begin{itemize}
+			\item As we can see the correctly guessed servers (triangles) take place
+			      in the upper-right section in a yellowish color.
+			\item We can choose some parameters to get the "Trusted matching set".
+			\item An attacker so can blindly select some matchings.
+		\end{itemize}
+	\end{frame}
+
+\section{Future Works}
+\begin{frame}{Future works}{}
+	\begin{itemize}
+		\item A simulation with the alternative new-born Tor client "Astoria".
+		\item An analysis of the i2p network model and the freenet network model.
+		\item An analysis for some modification based on the paper "Mix network model".
+		\item The modification to the \textbf{simple-tcp} plug-in to make it
+		      capable of connecting to multiple servers in single instance.
+		\item Go on with the score delta driven analysis.
+		\item Repeat the experiment with a bigger Tor network.
+	\end{itemize}
+\end{frame}
+
+{
+\aauwavesbg
+\begin{frame}[plain,noframenumbering]
+	\finalpage{Thank you for your attention.}
+\end{frame}
+}
