@@ -136,5 +136,97 @@ It operates as follow:
 \subsection{Plug-ins}
 
 \begin{frame}{Plug-ins}{Shadow plugins}
+	So we needed:
+	\begin{enumerate}
+		\item A client tracer shadow plug-in (proxy).
+		\item A server tracer shadow plug-in (proxy).
+		\item A logger plug-in.
+		\item A client plug-in (HTTP browser?).
+		\item A server plug-in (HTTP web-server?).
+	\end{enumerate}
+	1,2 and 3 was not implemented by the shadow research team.
 \end{frame}
 
+\begin{frame}{Plug-ins}{Autosys plug-in}
+	\begin{itemize}
+		\item Trace the SYN flag that pass trough Tor (on both ways)\footnote{
+			        A future work could be the trace of the SYN-ACK flag,
+		                to get the corresponding gap in the analysis part.}.
+		\item Send a packet to the logger $< type(Tracked\_node) ; Hostname(Tracked\_node) ; timestamp >$.
+	\end{itemize}
+	\begin{center}
+		\includegraphics[scale=0.3]{img/autosys.png}
+	\end{center}
+\end{frame}
+
+\begin{frame}{Plug-ins}{Autosys plug-in}
+	Can be implemented in a lot of different ways:
+	\begin{itemize}
+		\item As a sniffer installed on the routers which listen for
+		      every TCP SYN flag (the autonomous system).
+		\begin{itemize}
+			\item But \textbf{Shadow} does not support Raw Sockets.
+		\end{itemize}
+		\item We decided to implement that as a simple malware-like connection proxy
+		      installed on the client virtual node\footnote{A similar
+		      solution to the Hacking team one.}.
+		\item Otherwise the tracer can be installed on the guard relay
+		      (but we need to deal with re-association between traced
+		      clients and real clients because the path changes every
+		      10 minutes).
+	\end{itemize}
+	\begin{center}
+		\includegraphics[scale=0.4]{img/fbi.png}
+	\end{center}
+\end{frame}
+
+\begin{frame}{Plug-ins}{Analyzer/Logger plug-in}
+	\begin{itemize}
+		\item After being captured by the sniffers the data must be stocked for late-processing.
+		\item We used a public logger service that logs this informations.
+		\item Based on UDP for lightness.
+		\item (In a real-world scenario this entity would have some form of security and could be replicated/load balanced).
+	\end{itemize}
+	\begin{center}
+		\includegraphics[scale=0.4]{img/logger.png}
+	\end{center}
+\end{frame}
+
+\begin{frame}{Plug-ins}{Analyzer/Logger plug-in format}
+	This plug-in so will save the data that it receives from the sniffers
+	with a common format:
+	\[ host\_type ; hostname ; timestamp \]
+	\begin{itemize}
+		\item $host\_type$: C or S if the tracked is a client or a server (the communication is going in or it exiting from Tor?).
+		\item $hostname$: The hostname of the tracked (got by autosys).
+		\item $timestamp$: The temporal reference of the connection (This will be used to compute distances and gaps).
+	\end{itemize}
+	This will be processed in the phase 2 to get the matches.
+\end{frame}
+
+\begin{frame}{Plug-ins}{SimpleTCP plug-in (Client)}
+	We needed a simple client that sends his hostname on the network to compute
+	the \textbf{matching accuracy} later.
+	\begin{itemize}
+		\item Do some connections to a fixed server.
+		\item A future work should make it capable of multiple
+		      connections to multiple serves.
+		\item This plug-in must have SOCKS5 capability to run over Tor.
+	\end{itemize}
+\end{frame}
+
+\begin{frame}{Plug-ins}{SimpleTCP plug-in (Server)}
+	The server part, by opposite:
+	\begin{itemize}
+		\item Listen for some connections from the clients.
+		\item Add a time stamp to the current received packet (correspondent host name).
+		\item Save this data to a common file (per server).
+	\end{itemize}
+	This data will be used in the phase 2 to compute the \textbf{matching accuracy}.
+\end{frame}
+
+\begin{frame}{Plug-ins}{The big picture}
+	\begin{center}
+		\includegraphics[scale=0.15]{img/scenario.png}
+	\end{center}
+\end{frame}
