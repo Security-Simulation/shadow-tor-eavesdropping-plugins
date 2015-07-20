@@ -289,6 +289,17 @@ $M$:
 	\end{frame}
 \subsection{Empirical Results}
 	\begin{frame}{Matched Portion}{Servers traced portion augmenting}
+			\small Linearly dependent by the number of traced servers.
+			\begin{minipage}{.5\textwidth}
+				\includegraphics[scale=0.3]{graphs/s_server_mport_average_only.pdf}
+			\end{minipage}
+			\begin{minipage}{.4\textwidth}
+				\includegraphics[scale=0.3]{graphs/s_server_mport.pdf}
+			\end{minipage}
+	\end{frame}
+	\begin{frame}{Matched Portion}{Servers traced portion augmenting}
+			\small Increasing the connection density the function trend seems to be more
+			precise.
 			\begin{minipage}{.5\textwidth}
 				\includegraphics[scale=0.3]{graphs/s_server_mport_average_only.pdf}
 			\end{minipage}
@@ -297,6 +308,7 @@ $M$:
 			\end{minipage}
 	\end{frame}
 	\begin{frame}{Matched Portion}{Clients traced portion augmenting}
+			\small The matched portion tends to be constant around 80\%
 			\begin{minipage}{.5\textwidth}
 				\includegraphics[scale=0.3]{graphs/c_tclient_mport_average_only.pdf}
 			\end{minipage}
@@ -305,8 +317,7 @@ $M$:
 			\end{minipage}
 	\end{frame}
 	\begin{frame}{Matched Portion}{Details}
-			We can see that the matched portion tends to be constant around 80\% (as with an high portion
-			of traced servers).
+			\small As it was with an high portion of traced servers.
 			\begin{minipage}{.5\textwidth}
 				\includegraphics[scale=0.3]{graphs/s_server_mport_average_only.pdf}
 			\end{minipage}
@@ -314,12 +325,15 @@ $M$:
 				\includegraphics[scale=0.3]{graphs/c_tclient_mport.pdf}
 			\end{minipage}
 	\end{frame}
-	\begin{frame}{Matched Portion}{Considerations}
-		\begin{itemize}
-			\item This behaviour was expected because the analysis is conducted from the clients side.
-			\item Increasing the connection density the function trend seems to be more precise.
-			\item Linearly dependent by the number of traced servers.
-		\end{itemize}
+	\begin{frame}{Matched Portion}{Details}
+			\small Expected behaviour as the analysis is conducted from the clients side.
+
+			\begin{minipage}{.5\textwidth}
+				\includegraphics[scale=0.3]{graphs/s_server_mport_average_only.pdf}
+			\end{minipage}
+			\begin{minipage}{.4\textwidth}
+				\includegraphics[scale=0.3]{graphs/c_tclient_mport.pdf}
+			\end{minipage}
 	\end{frame}
 	\begin{frame}{Matched Accuracy}{Servers traced portion augmenting}
 		\begin{minipage}{.5\textwidth}
@@ -337,7 +351,15 @@ $M$:
 			\includegraphics[scale=0.3]{graphs/c_tclient_pmatch.pdf}
 		\end{minipage}
 	\end{frame}
-
+	\begin{frame}{Matched Accuracy}{Considerations}
+		\begin{itemize}
+			\item The clients who correctly found their best candidates,
+matched almost all
+the connections from those servers
+			\item The matching accuracy does not depend from any of the
+factors considered.	
+		\end{itemize}
+	\end{frame}
 	\begin{frame}{Considered values}{Both portions}
 		\begin{minipage}{.5\textwidth}
 			\includegraphics[scale=0.3]{graphs/cs_tport_mport.pdf}
@@ -356,7 +378,8 @@ $M$:
 	\end{frame}
 
 	\begin{frame}{Communication density}{}
-		Does not seems to highly interfere with the matched portion.
+		\small The logging capacity dimishes while increasing the density of
+connections.
 		\begin{center}
 		\includegraphics[scale=0.3]{graphs/density_clients_ration.pdf}
 		\end{center}
@@ -375,19 +398,49 @@ $M$:
 			\begin{tabular}{c c}
 				\includegraphics[scale=0.275]{graphs/map_cs_4_average.pdf} &
 				\includegraphics[scale=0.275]{graphs/map_cs_9_average.pdf} \\
-				40\% of traced portion &
-				90\% of traced portion
+				\small 40\% of traced portion &
+				\small 90\% of traced portion
 			\end{tabular}
 		\end{minipage}
 	\end{frame}
 
-	\begin{frame}{Correct guesses spatial distribution}{Considerations}
-		\begin{itemize}
-			\item As we can see the correctly guessed servers (triangles) take place
-			      in the upper-right section in a yellowish color.
-			\item We can choose some parameters to get the "Trusted matching set".
-			\item An attacker so can blindly select some matchings.
-		\end{itemize}
+	\begin{frame}{Correct guesses spatial distribution}{}
+		\small As we can see the correctly guessed servers (triangles) take
+place in the upper-right section in a yellowish color.
+		\begin{minipage}{.9\textwidth}
+			\begin{tabular}{c c}
+				\includegraphics[scale=0.275]{graphs/map_cs_4_average.pdf} &
+				\includegraphics[scale=0.275]{graphs/map_cs_9_average.pdf} \\
+				\small 40\% of traced portion &
+				\small 90\% of traced portion
+			\end{tabular}
+		\end{minipage}
+	\end{frame}
+
+	\begin{frame}{Correct guesses spatial distribution}{}
+		\small We can choose some parameters to get the "Trusted matching set".
+		\begin{minipage}{.9\textwidth}
+			\begin{tabular}{c c}
+				\includegraphics[scale=0.275]{graphs/map_cs_4_average.pdf} &
+				\includegraphics[scale=0.275]{graphs/map_cs_9_average.pdf} \\
+				\small 40\% of traced portion &
+				\small 90\% of traced portion
+			\end{tabular}
+		\end{minipage}
+	\end{frame}
+
+	\begin{frame}{Correct guesses spatial distribution}{}
+	 	\small An attacker so can blindly select some matchings.
+		\begin{minipage}{.9\textwidth}
+			\begin{tabular}{c c}
+				\includegraphics[scale=0.275]{graphs/map_cs_4_average.pdf}
+&
+				\includegraphics[scale=0.275]{graphs/map_cs_9_average.pdf}
+\\
+				\small 40\% of traced portion &
+				\small 90\% of traced portion
+			\end{tabular}
+		\end{minipage}
 	\end{frame}
 
 \section{Future Works}
