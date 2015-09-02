@@ -1,0 +1,10 @@
+\beamer@endinputifotherversion {3.36pt}
+\select@language {english}
+\beamer@sectionintoc {1}{Introduction}{3}{0}{1}
+\beamer@sectionintoc {2}{Datagate Scandal}{3}{0}{2}
+\beamer@subsectionintoc {2}{1}{Edward Snowden and NSA}{3}{0}{2}
+\beamer@sectionintoc {3}{Programs and contermeasures}{3}{0}{3}
+\beamer@sectionintoc {4}{Known attacks to common programs}{3}{0}{4}
+\beamer@sectionintoc {5}{Contermeasures}{3}{0}{5}
+\beamer@sectionintoc {6}{Future works}{3}{0}{6}
+\beamer@sectionintoc {7}{Conclusions}{3}{0}{7}

@@ -1,0 +1,58 @@
+\documentclass{beamer}
+\usepackage[english]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{xcolor}
+\usepackage{beamerthemesplit}
+\usepackage[orientation=landscape, size=custom, width=16, height=9, scale=0.5]{beamerposter}
+\usetheme[left]{AAUsidebar}
+
+\title{Privacy methods.}
+\subtitle{Simulazione di Sistemi}
+\date{\today}
+
+\author[Davide Berardi, Matteo Martelli]{
+	Davide Berardi
+	\and
+	Matteo Martelli
+	\\
+	0000712698
+	\and
+	0000702472
+}
+
+\institute[Simulazione di Sistemi]{Università di Bologna.}
+
+
+\begin{document}
+\pgfdeclareimage[height=1.7cm,width=1.7cm]{titlepagelogo}{AAUgraphics/Lock}
+
+\titlegraphic{
+	\pgfuseimage{titlepagelogo}
+}
+{
+	\aauwavesbg
+	\begin{frame}[plain,noframenumbering]
+		\titlepage
+	\end{frame}
+}
+
+\begin{frame}{Table of contents}{}
+	\tableofcontents
+\end{frame}
+
+% Parte 1
+\input{core/intro.tex}
+\input{core/datagate.tex}
+
+% Parte 2
+\input{core/methods_and_attacks.tex}
+\input{core/contermeasures_and_future_works.tex}
+
+{
+\aauwavesbg
+\begin{frame}[plain,noframenumbering]
+	\finalpage{Thank you for your attention.}
+\end{frame}
+}
+
+\end{document}
