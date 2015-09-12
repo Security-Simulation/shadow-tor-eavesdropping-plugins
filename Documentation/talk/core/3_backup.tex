@@ -1,0 +1,30 @@
+\begin{frame}[noframenumbering]
+	\frametitle{Diffie-Hellman}
+	\begin{itemize}
+		\item Alice pick a random number $a$, a prime number $p$ and
+		$\alpha$ as a primitive root of p.
+		\item Alice calculate $k_a = \alpha ^{a} mod p$ and sends $<k_a,
+		p, \alpha>$ over the channel.
+		\item Bob read the packet, pick a random number $b$,
+		calculate $k_b = \alpha^{b} mod p$ and sends it to Alice.
+	\end{itemize}
+	Now the shared key $K = k_b^{a} = k_a^{b} = \alpha^{ab} mod p$ is known
+	to Alice and Bob\footnote{For the little Fermat theorem ($a^p \equiv a$
+	$mod p$) if p is a prime}.
+\end{frame}
+
+\begin{frame}[noframenumbering]
+	\frametitle{Perfect Forward Secrecy}
+	\begin{itemize}
+		\item If a key is derived from another with a deterministic
+		method then a leak of the second key can reveal every
+		eavesdropped transmission encrypthed with the first key.
+		\item The immunity to this kind of attacks is called
+		\textit{Perfect Forward Security}.
+		\item Used in Diffie Hellman based TLS, OTR, etc.
+	\end{itemize}
+\end{frame}
+
+\begin{frame}[noframenumbering]
+	\frametitle{Freenet}
+\end{frame}
