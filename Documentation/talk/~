@@ -10,10 +10,10 @@
 	We have a lot of programs to protect our data
 	\begin{itemize}
 		\item PGP
+		\item Protonmail
 		\item IPsec
 		\item OTR-based programs
-		\item Protonmail \includegraphics[scale=0.017]{imgs/Protonmail_logo}
-		\item TrueCrypt \includegraphics[scale=0.1]{imgs/TrueCrypt_Logo}
+		\item TrueCrypt
 		\item \textbf{Perfect Forward Secrecy}
 	\end{itemize}
 	Some tool for steganography can help but not too much.

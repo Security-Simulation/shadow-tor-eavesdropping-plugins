@@ -27,4 +27,30 @@
 
 \begin{frame}[noframenumbering]
 	\frametitle{Freenet}
+	\begin{center}
+	\includegraphics[scale=0.7]{imgs/Freenet_logo}
+	\end{center}
+	\begin{itemize}
+		\item A file is encrypthed with his hash and shared over the
+		network.
+		\item It can optionally encrypthed with the public keys of the
+		dark net users (pseudonym-like) (and signed).
+		\item The file is so splitted in chunks and shared over the
+		network.
+		\item Every node can't understand which chunk of which file is
+		processing and what is written in the file itself.
+	\end{itemize}
+\end{frame}
+
+\begin{frame}[noframenumbering]
+	\frametitle{Freenet (2)}
+	\begin{center}
+	\includegraphics[scale=0.7]{imgs/Freenet_logo}
+	\end{center}
+	\begin{itemize}
+		\item The net is garanted to resemble a small world network (so the max degree is
+		$log(n)$) using the Metropolis Hasting algorithm.
+		\item If a file is not popular and only a chunk is lost, the
+		file is lost forever.
+	\end{itemize}
 \end{frame}
