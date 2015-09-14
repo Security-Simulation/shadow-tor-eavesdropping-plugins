@@ -1,4 +1,4 @@
-\beamer@endinputifotherversion {3.36pt}
+\beamer@endinputifotherversion {3.33pt}
 \headcommand {\slideentry {0}{0}{1}{1/1}{}{0}}
 \headcommand {\beamer@framepages {1}{1}}
 \headcommand {\sectionentry {1}{Introduction}{2}{Introduction}{0}}
@@ -86,28 +86,48 @@
 \headcommand {\beamer@subsectionpages {22}{33}}
 \headcommand {\slideentry {5}{0}{22}{34/34}{}{0}}
 \headcommand {\beamer@framepages {34}{34}}
-\headcommand {\sectionentry {6}{Astoria}{35}{Astoria}{0}}
-\headcommand {\beamer@sectionpages {34}{34}}
-\headcommand {\beamer@subsectionpages {34}{34}}
-\headcommand {\sectionentry {7}{Other ORs and technologies}{35}{Other ORs and technologies}{0}}
-\headcommand {\beamer@sectionpages {35}{34}}
-\headcommand {\beamer@subsectionpages {35}{34}}
-\headcommand {\beamer@subsectionentry {0}{7}{1}{35}{HORNET}}\headcommand {\beamer@subsectionpages {35}{34}}
-\headcommand {\sectionentry {8}{Open Problems}{35}{Open Problems}{0}}
-\headcommand {\beamer@sectionpages {35}{34}}
-\headcommand {\beamer@subsectionpages {35}{34}}
-\headcommand {\slideentry {8}{0}{1}{35/35}{}{0}}
+\headcommand {\slideentry {5}{0}{23}{35/35}{}{0}}
 \headcommand {\beamer@framepages {35}{35}}
-\headcommand {\slideentry {8}{0}{2}{36/36}{}{0}}
+\headcommand {\slideentry {5}{0}{24}{36/36}{}{0}}
 \headcommand {\beamer@framepages {36}{36}}
-\headcommand {\slideentry {8}{0}{3}{37/37}{}{0}}
+\headcommand {\slideentry {5}{0}{25}{37/37}{}{0}}
 \headcommand {\beamer@framepages {37}{37}}
-\headcommand {\slideentry {8}{0}{4}{38/38}{}{0}}
+\headcommand {\slideentry {5}{0}{26}{38/38}{}{0}}
 \headcommand {\beamer@framepages {38}{38}}
-\headcommand {\slideentry {8}{0}{5}{39/39}{}{0}}
+\headcommand {\slideentry {5}{0}{27}{39/39}{}{0}}
 \headcommand {\beamer@framepages {39}{39}}
-\headcommand {\beamer@partpages {1}{39}}
-\headcommand {\beamer@subsectionpages {35}{39}}
-\headcommand {\beamer@sectionpages {35}{39}}
-\headcommand {\beamer@documentpages {39}}
-\headcommand {\def \inserttotalframenumber {32}}
+\headcommand {\slideentry {5}{0}{28}{40/40}{}{0}}
+\headcommand {\beamer@framepages {40}{40}}
+\headcommand {\slideentry {5}{0}{29}{41/41}{}{0}}
+\headcommand {\beamer@framepages {41}{41}}
+\headcommand {\sectionentry {6}{Astoria}{42}{Astoria}{0}}
+\headcommand {\beamer@sectionpages {34}{41}}
+\headcommand {\beamer@subsectionpages {34}{41}}
+\headcommand {\slideentry {6}{0}{30}{42/42}{}{0}}
+\headcommand {\beamer@framepages {42}{42}}
+\headcommand {\slideentry {6}{0}{31}{43/43}{}{0}}
+\headcommand {\beamer@framepages {43}{43}}
+\headcommand {\slideentry {6}{0}{32}{44/44}{}{0}}
+\headcommand {\beamer@framepages {44}{44}}
+\headcommand {\sectionentry {7}{Open Problems}{45}{Open Problems}{0}}
+\headcommand {\beamer@sectionpages {42}{44}}
+\headcommand {\beamer@subsectionpages {42}{44}}
+\headcommand {\slideentry {7}{0}{33}{45/45}{}{0}}
+\headcommand {\beamer@framepages {45}{45}}
+\headcommand {\slideentry {7}{0}{34}{46/46}{}{0}}
+\headcommand {\beamer@framepages {46}{46}}
+\headcommand {\slideentry {7}{0}{35}{47/47}{}{0}}
+\headcommand {\beamer@framepages {47}{47}}
+\headcommand {\slideentry {7}{0}{36}{48/48}{}{0}}
+\headcommand {\beamer@framepages {48}{48}}
+\headcommand {\slideentry {7}{0}{37}{49/49}{}{0}}
+\headcommand {\beamer@framepages {49}{49}}
+\headcommand {\slideentry {7}{0}{38}{50/50}{}{0}}
+\headcommand {\beamer@framepages {50}{50}}
+\headcommand {\slideentry {7}{0}{39}{51/51}{}{0}}
+\headcommand {\beamer@framepages {51}{51}}
+\headcommand {\beamer@partpages {1}{51}}
+\headcommand {\beamer@subsectionpages {45}{51}}
+\headcommand {\beamer@sectionpages {45}{51}}
+\headcommand {\beamer@documentpages {51}}
+\headcommand {\def \inserttotalframenumber {44}}
