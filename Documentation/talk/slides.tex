@@ -54,12 +54,10 @@
 \input{core/22_tor_attacks.tex} %attacks, timing, our project, NSA timing
 \input{core/23_other_approaches.tex} %other ORs, astoria, IPsec?
 
+\nocite{*}
+\bibliographystyle{amsalpha}
 
-\begin{frame}{Bibliography}
-	\nocite{*}
-	\bibliographystyle{alpha}
-	\bibliography{core/bibliog}
-\end{frame}{
+{
 \aauwavesbg
 
 
@@ -69,6 +67,14 @@
 
 }
 
+
+\begin{frame}[allowframebreaks]
+	\frametitle{Bibliography}
+{
+	\scriptsize
+	\bibliography{core/bibliog}
+}
+\end{frame}
 
 % Backup slides
 %\input{core/3_backup.tex}
