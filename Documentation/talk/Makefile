@@ -1,13 +1,15 @@
 COREDIR:=core
 SOURCE:=slides
 CORE:=$(wildcard $(COREDIR)/*)
+BIBLIO:=$(COREDIR)/*.bib
+
 
 all: ${SOURCE}.pdf one 
 
 .PHONY: all one clean
 
 # Execute pdflatex 3 times, workaround to get working \label and \ref tags.
-%.pdf: ${SOURCE}.tex $(CORE)
+%.pdf: ${SOURCE}.tex $(CORE) ${BIBLIO}
 	pdflatex ${SOURCE}.tex && pdflatex ${SOURCE}.tex
 
 one: $(CORE)

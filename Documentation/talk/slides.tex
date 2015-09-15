@@ -3,6 +3,7 @@
 \usepackage[utf8]{inputenc}
 \usepackage{xcolor}
 \usepackage{beamerthemesplit}
+\usepackage{cite}
 \usepackage[orientation=landscape, size=custom, width=16, height=9, scale=0.5]{beamerposter}
 \usetheme[left]{AAUsidebar}
 
@@ -53,14 +54,22 @@
 \input{core/22_tor_attacks.tex} %attacks, timing, our project, NSA timing
 \input{core/23_other_approaches.tex} %other ORs, astoria, IPsec?
 
-{
+
+\begin{frame}{Bibliography}
+	\nocite{*}
+	\bibliographystyle{alpha}
+	\bibliography{core/bibliog}
+\end{frame}{
 \aauwavesbg
+
+
 \begin{frame}[plain,noframenumbering]
 	\finalpage{Thank you for your attention.}
 \end{frame}
+
 }
 
-% Backup slides
-\input{core/3_backup.tex}
 
+% Backup slides
+%\input{core/3_backup.tex}
 \end{document}
