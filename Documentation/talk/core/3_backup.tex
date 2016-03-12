@@ -1,0 +1,76 @@
+\begin{frame}[noframenumbering]
+	\frametitle{Diffie-Hellman}
+	\begin{itemize}
+		\item Alice pick a random number $a$, a prime number $p$ and
+		$\alpha$ as a primitive root of p.
+		\item Alice calculate $k_a = \alpha ^{a} mod p$ and sends $<k_a,
+		p, \alpha>$ over the channel.
+		\item Bob read the packet, pick a random number $b$,
+		calculate $k_b = \alpha^{b} mod p$ and sends it to Alice.
+	\end{itemize}
+	Now the shared key $K = k_b^{a} = k_a^{b} = \alpha^{ab} mod p$ is known
+	to Alice and Bob\footnote{For the little Fermat theorem ($a^p \equiv a$
+	$mod p$) if p is a prime}.
+\end{frame}
+
+\begin{frame}[noframenumbering]
+	\frametitle{Perfect Forward Secrecy}
+	\begin{itemize}
+		\item If a key is derived from another with a deterministic
+		method then a leak of the second key can reveal every
+		eavesdropped transmission encrypthed with the first key.
+		\item The immunity to this kind of attacks is called
+		\textit{Perfect Forward Security}.
+		\item Used in Diffie Hellman based TLS, OTR, etc.
+	\end{itemize}
+\end{frame}
+
+\begin{frame}[noframenumbering]
+	\frametitle{Freenet}
+	\begin{center}
+	\includegraphics[scale=0.7]{imgs/Freenet_logo}
+	\end{center}
+	\begin{itemize}
+		\item A file is encrypthed with his hash and shared over the
+		network.
+		\item It can optionally encrypthed with the public keys of the
+		dark net users (pseudonym-like) (and signed).
+		\item The file is so splitted in chunks and shared over the
+		network.
+		\item Every node can't understand which chunk of which file is
+		processing and what is written in the file itself.
+	\end{itemize}
+\end{frame}
+
+\begin{frame}[noframenumbering]
+	\frametitle{Freenet (2)}
+	\begin{center}
+	\includegraphics[scale=0.7]{imgs/Freenet_logo}
+	\end{center}
+	\begin{itemize}
+		\item The net is garanted to resemble a small world network (so the max degree is
+		$log(n)$) using the Metropolis Hasting algorithm.
+		\item If a file is not popular and only a chunk is lost, the
+		file is lost forever.
+	\end{itemize}
+\end{frame}
+
+\begin{frame}[noframenumbering]
+	\frametitle{Tor Attacks}
+	\begin{itemize}
+		\item Sylpheed
+		\item Bad Apple
+		\item Sniper
+		\item Heartbleed
+		\item Bundle attacks
+		\item Protocol attacks
+		\item ...users...
+	\end{itemize}
+\end{frame}
+
+\begin{frame}
+	\frametitle{AS map}
+	\begin{center}
+	\includegraphics[scale=0.5]{imgs/as}
+	\end{center}
+\end{frame}

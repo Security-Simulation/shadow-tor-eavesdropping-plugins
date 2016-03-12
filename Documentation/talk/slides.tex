@@ -3,6 +3,7 @@
 \usepackage[utf8]{inputenc}
 \usepackage{xcolor}
 \usepackage{beamerthemesplit}
+\usepackage{cite}
 \usepackage[orientation=landscape, size=custom, width=16, height=9, scale=0.5]{beamerposter}
 \usetheme[left]{AAUsidebar}
 
@@ -36,25 +37,45 @@
 	\end{frame}
 }
 
-\begin{frame}{Table of contents}{}
-	\tableofcontents
-\end{frame}
-
 % Parte 1
 \input{core/11_intro.tex}
 \input{core/12_who_involved.tex} %gov (surveillance, obscuring), bad_guys
 \input{core/13_technologies.tex}
+
+{
+\aauwavesbg
+\begin{frame}[plain,noframenumbering]
+	\finalpage{Part 2 -- Onion routers and attacks}
+\end{frame}
+}
 
 % Parte 2
 \input{core/21_tor_internals.tex} %working (briefly)
 \input{core/22_tor_attacks.tex} %attacks, timing, our project, NSA timing
 \input{core/23_other_approaches.tex} %other ORs, astoria, IPsec?
 
+\nocite{*}
+\bibliographystyle{amsalpha}
+
 {
 \aauwavesbg
+
+
 \begin{frame}[plain,noframenumbering]
 	\finalpage{Thank you for your attention.}
 \end{frame}
+
 }
 
+
+% Backup slides
+\input{core/3_backup.tex}
+
+\begin{frame}[allowframebreaks]
+	\frametitle{Bibliography}
+{
+	\scriptsize
+	\bibliography{core/bibliog}
+}
+\end{frame}
 \end{document}
