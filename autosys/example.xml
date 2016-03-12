@@ -1,0 +1,50 @@
+<?xml version="1.0" ?>
+<shadow>
+	<kill time="1800"/>
+	<topology path="~/.shadow/share/topology.graphml.xml"/>
+	<plugin id="filetransfer" path="~/.shadow/plugins/libshadow-plugin-filetransfer.so"/>
+	<plugin id="scallion" path="~/.shadow/plugins/libshadow-plugin-scallion.so"/>
+	<plugin id="torctl" path="~/.shadow/plugins/libshadow-plugin-torctl.so"/>
+	<plugin id="autosys" path="~/.shadow/plugins/libshadow-plugin-autosys.so"/>
+	<plugin id="analyzer" path="~/.shadow/plugins/libshadow-plugin-analyzer.so"/>
+	<node geocodehint="TN" id="evil_analyzer">
+		<application arguments="any:12345 ./data/analyzer_trace.log" plugin="analyzer" time="1000"/>
+	</node>
+	<node bandwidthdown="10240" bandwidthup="10240" geocodehint="MC" id="4uthority1">
+		<application arguments="dirauth 1024 --quiet --Address ${NODEID} --Nickname ${NODEID} --DataDirectory ./data/${NODEID} --GeoIPFile ~/.shadow/share/geoip --BandwidthRate 1024000 --BandwidthBurst 1024000 --ControlPort 9051 -f ./dirauth.torrc --V3BandwidthsFile ./data/${NODEID}/dirauth.v3bw" plugin="scallion" time="1"/>
+		<application arguments="localhost 9051 STREAM,CIRC,CIRC_MINOR,ORCONN,BW,STREAM_BW,CIRC_BW,CONN_BW,BUILDTIMEOUT_SET,CLIENTS_SEEN,GUARD,CELL_STATS,TB_EMPTY" plugin="torctl" time="2"/>
+	</node>
+	<node bandwidthdown="10240" bandwidthup="10240" geocodehint="KZ" id="relay0">
+		<application arguments="relay 1024 --quiet --Address ${NODEID} --Nickname ${NODEID} --DataDirectory ./data/${NODEID} --GeoIPFile ~/.shadow/share/geoip --BandwidthRate 1024000 --BandwidthBurst 1024000 --ControlPort 9051 -f ./relay.torrc" plugin="scallion" time="1"/>
+		<application arguments="localhost 9051 STREAM,CIRC,CIRC_MINOR,ORCONN,BW,STREAM_BW,CIRC_BW,CONN_BW,BUILDTIMEOUT_SET,CLIENTS_SEEN,GUARD,CELL_STATS,TB_EMPTY" plugin="torctl" time="2"/>
+	</node>
+	<node bandwidthdown="10240" bandwidthup="10240" geocodehint="MW" id="relay1">
+		<application arguments="relay 1024 --quiet --Address ${NODEID} --Nickname ${NODEID} --DataDirectory ./data/${NODEID} --GeoIPFile ~/.shadow/share/geoip --BandwidthRate 1024000 --BandwidthBurst 1024000 --ControlPort 9051 -f ./relay.torrc" plugin="scallion" time="1"/>
+		<application arguments="localhost 9051 STREAM,CIRC,CIRC_MINOR,ORCONN,BW,STREAM_BW,CIRC_BW,CONN_BW,BUILDTIMEOUT_SET,CLIENTS_SEEN,GUARD,CELL_STATS,TB_EMPTY" plugin="torctl" time="2"/>
+	</node>
+	<node bandwidthdown="10240" bandwidthup="10240" geocodehint="SZ" id="exit0">
+		<application arguments="exitrelay 1024 --quiet --Address ${NODEID} --Nickname ${NODEID} --DataDirectory ./data/${NODEID} --GeoIPFile ~/.shadow/share/geoip --BandwidthRate 1024000 --BandwidthBurst 1024000 --ControlPort 9051 -f ./exitrelay.torrc" plugin="scallion" time="1"/>
+		<application arguments="localhost 9051 STREAM,CIRC,CIRC_MINOR,ORCONN,BW,STREAM_BW,CIRC_BW,CONN_BW,BUILDTIMEOUT_SET,CLIENTS_SEEN,GUARD,CELL_STATS,TB_EMPTY" plugin="torctl" time="2"/>
+	</node>
+	<node geocodehint="BJ" id="fileserver0">
+		<application arguments="any:80 localhost:8080 evil_analyzer:12345 server" plugin="autosys" time="9"/>
+		<application arguments="server 8080 ~/.shadow/share" plugin="filetransfer" time="10"/>
+	</node>
+	<node geocodehint="LU" id="fileserver1">
+		<application arguments="any:80 localhost:8080 evil_analyzer:12345 server" plugin="autosys" time="9"/>
+		<application arguments="server 8080 ~/.shadow/share" plugin="filetransfer" time="10"/>
+	</node>
+	<node geocodehint="IS" id="fileclient0">
+		<application arguments="client 1024 --quiet --Address ${NODEID} --Nickname ${NODEID} --DataDirectory ./data/${NODEID} --GeoIPFile ~/.shadow/share/geoip --BandwidthRate 1024000 --BandwidthBurst 1024000 --ControlPort 9051 -f ./client.torrc" plugin="scallion" time="900"/>
+		<application arguments="localhost 9051 STREAM,CIRC,CIRC_MINOR,ORCONN,BW,STREAM_BW,CIRC_BW,CONN_BW,BUILDTIMEOUT_SET,CLIENTS_SEEN,GUARD,CELL_STATS,TB_EMPTY" plugin="torctl" time="901"/>
+		<application arguments="localhost:10000 localhost:9000 evil_analyzer:12345" plugin="autosys" time="999"/>
+		<application arguments="client single fileserver0 80 localhost 10000 10 /1MiB.urnd" plugin="filetransfer" time="1000"/>
+	</node>
+	<node geocodehint="DM" id="fileclient1">
+		<application arguments="client 1024 --quiet --Address ${NODEID} --Nickname ${NODEID} --DataDirectory ./data/${NODEID} --GeoIPFile ~/.shadow/share/geoip --BandwidthRate 1024000 --BandwidthBurst 1024000 --ControlPort 9051 -f ./client.torrc" plugin="scallion" time="902"/>
+		<application arguments="localhost 9051 STREAM,CIRC,CIRC_MINOR,ORCONN,BW,STREAM_BW,CIRC_BW,CONN_BW,BUILDTIMEOUT_SET,CLIENTS_SEEN,GUARD,CELL_STATS,TB_EMPTY" plugin="torctl" time="903"/>
+		<application arguments="localhost:10000 localhost:9000 evil_analyzer:12345" plugin="autosys" time="1001"/>
+		<application arguments="client single fileserver1 80 localhost 10000 10 /1MiB.urnd" plugin="filetransfer" time="1002"/>
+	</node>
+</shadow>
+
