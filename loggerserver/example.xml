@@ -36,8 +36,7 @@
 
     <!-- the plug-ins we will be using -->
 
-    <plugin id="hello" path="libshadow-plugin-hello.so" />
-	<plugin id="tproxy" path="~/.shadow/plugins/libshadow-plugin-tproxy.so"/>
+    <plugin id="echoplugin" path="libshadow-plugin-echo.so" />
 	<plugin id="loggerserver" path="~/.shadow/plugins/libshadow-plugin-loggerserver.so"/>
 
     <!-- the length of our experiment in seconds -->
@@ -47,16 +46,15 @@
     <!-- our nodes and the applications they run -->
 
 	<node id="loggerserver">
-		<application plugin="loggerserver" time="5" arguments="any:50005 connections.log" />
+		<application plugin="loggerserver" time="5" arguments="any:9999 loggerserver.log" />
 	</node>
 
-    <node id="helloserver" geocodehint="US">
-		<application plugin="tproxy" time="10" arguments="localhost:50000 localhost:12345 loggerserver:50005 server" />
-        <application plugin="hello" time="20" arguments="" />
+    <node id="client1">
+        <application plugin="echoplugin" time="10" arguments="udp client loggerserver" />
     </node>
-    <node id="helloclient">
-		<application plugin="tproxy" time="15" arguments="localhost:12345 helloserver:50000 loggerserver:50005" />
-        <application plugin="hello" time="30" arguments="localhost" />
+	
+	<node id="client2">
+        <application plugin="echoplugin" time="15" arguments="udp client loggerserver" />
     </node>
 
 </shadow>
