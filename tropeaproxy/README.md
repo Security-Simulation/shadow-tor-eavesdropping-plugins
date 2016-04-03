@@ -9,7 +9,7 @@ In particular `tproxy` can be placed on both client and server sides in order to
 the logger server collect timing information about the TCP connections.
 
 
-copyright holders
+copyright holde.s
 -----------------
 Davide Berardi, Matteo Martelli.
 
@@ -57,18 +57,29 @@ where
 
 Please see also the `example-tor.xml`, a more complex example which may be run in Shadow with the shdow-tor-plugin.
 
-TODO...
+The latter shows an example of how tproxy can be used in a simulated Tor network with 3 clients, 2 servers, 5 Tor relays, 2 Tor exit node and a logger server.
 
+In particular, the tproxy plugin runs only on 1 server and on 2 clients.
+
+This example wants to show how a timing attack simulation against Tor can be afforded,
+in fact, once the simulation ends, one can look at the logger server output file in order to analyse 
+the timing relations about the logged connections.
 
 A binary version of the code is available for usage outside of Shadow.
-Run the program `loggerserver` providing a bind hostname, a bind port and a logfile:
-
+Run the program `tproxy` providing a bind hostname and port, a forward address and port and an address and port for the logger server.
+Also, the optional `server` argument can be provided to inform tproxy that it's running on a server. This one will just affect the log messages.
+Thus, in order to test that the proxy is working run on a proxy host:
 ```bash
-loggerserver any:50000 loggerserver.log
+tproxy any:5000 serverhost:5000 loggerserver:12345
 ```
-Then you can test it with any software tool which can send UDP packets to a specified host and port.
-
+Then you can test it with any software tool which can act as a TCP client and as a TCP server.
+On the server host:
 ```bash
-nc -u localhost 50000
+nc -lp 5000
 ```
-At the end of the test, logerserver.log should contain the payloads of all the UDP packets loggerserver received.
+and on the client host:
+```bash
+nc proxyhost 5000 
+```
+At the end of the test, the logger server log file should contain the connection timing data and tproxy should have correctly forwarded 
+all the TCP packets.
