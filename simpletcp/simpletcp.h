@@ -5,6 +5,7 @@
 #ifndef SIMPLETCP_H_
 #define SIMPLETCP_H_
 
+#define _GNU_SOURCE
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -23,15 +24,16 @@
 #include <fcntl.h>
 #include <glib.h>
 
-#include <shd-library.h>
-
 
 typedef struct _SimpleTCP SimpleTCP;
 
 /* all state for simpletcp is stored here */
 struct _SimpleTCP {
+#if 0
 	/* The shadow libraries, it points to all the available functions */
+	/* XXX this seems not to work this way anymore (shadow 1.11). */
 	ShadowFunctionTable *shdlib;
+#endif
 
 	/* the epoll descriptor to which we will add our sockets.
 	 * we use this descriptor with epoll to watch events on our sockets. */
@@ -62,7 +64,7 @@ struct _SimpleTCP {
 	} server;
 };
 
-SimpleTCP* simpletcp_new(int argc, char* argv[], ShadowFunctionTable *shdlib);
+SimpleTCP* simpletcp_new(int argc, char* argv[]);
 void simpletcp_free(SimpleTCP* h);
 void simpletcp_ready(SimpleTCP* h);
 int simpletcp_getEpollDescriptor(SimpleTCP* h);

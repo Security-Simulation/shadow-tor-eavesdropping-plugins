@@ -47,15 +47,15 @@
     <!-- our nodes and the applications they run -->
 
 	<node id="loggerserver">
-		<application plugin="loggerserver" time="5" arguments="any:50005 connections.log" />
+		<application plugin="loggerserver" time="5" arguments="any:50005 shadow.data/connections.log" />
 	</node>
 
     <node id="helloserver" geocodehint="US">
-		<application plugin="tproxy" time="10" arguments="localhost:50000 localhost:12345 loggerserver:50005 server" />
+	<application plugin="tproxy" time="10" arguments="any:50000 localhost:12345 loggerserver:50005 server" />
         <application plugin="hello" time="20" arguments="" />
     </node>
     <node id="helloclient">
-		<application plugin="tproxy" time="15" arguments="localhost:12345 helloserver:50000 loggerserver:50005" />
+	<application plugin="tproxy" time="15" arguments="localhost:12345 helloserver:50000 loggerserver:50005" />
         <application plugin="hello" time="30" arguments="localhost" />
     </node>
 

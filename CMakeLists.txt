@@ -99,4 +99,4 @@ message(STATUS "CMAKE_C_FLAGS = ${CMAKE_C_FLAGS}")
 
 add_subdirectory(${CMAKE_SOURCE_DIR}/tropeaproxy/)
 add_subdirectory(${CMAKE_SOURCE_DIR}/loggerserver/)
-#add_subdirectory(${CMAKE_SOURCE_DIR}/simpletcp/)
+add_subdirectory(${CMAKE_SOURCE_DIR}/simpletcp/)

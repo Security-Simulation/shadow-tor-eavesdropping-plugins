@@ -1,14 +1,14 @@
 <?xml version="1.0" ?>
 <shadow>
-	<kill time="18000"/>
+	<kill time="2000"/>
 	<topology path="~/.shadow/share/topology.graphml.xml"/>
-	<plugin id="simpletcp" path="~/.shadow/plugins/libshadow-plugin-simpletcp.so"/>
-	<plugin id="scallion" path="~/.shadow/plugins/libshadow-plugin-scallion.so"/>
+	<plugin id="simpletcp" path="~/.shadow/plugins/libshadow-plugin-randomecho.so"/>
+	<plugin id="scallion" path="~/.shadow/plugins/libshadow-plugin-tor.so"/>
 	<plugin id="torctl" path="~/.shadow/plugins/libshadow-plugin-torctl.so"/>
 	<plugin id="tproxy" path="~/.shadow/plugins/libshadow-plugin-tproxy.so"/>
 	<plugin id="loggerserver" path="~/.shadow/plugins/libshadow-plugin-loggerserver.so"/>
 	<node geocodehint="MU" id="evil_loggerserver">
-		<application arguments="any:12345 ./data/loggerserver_trace.log" plugin="loggerserver" time="600"/>
+		<application arguments="any:12345 ./shadow.data/loggerserver_trace.log" plugin="loggerserver" time="600"/>
 	</node>
 	<node bandwidthdown="10240" bandwidthup="10240" geocodehint="AL" id="4uthority1">
 		<application arguments="dirauth 1024 --quiet --Address ${NODEID} --Nickname ${NODEID} --DataDirectory ./data/${NODEID} --GeoIPFile ~/.shadow/share/geoip --BandwidthRate 1024000 --BandwidthBurst 1024000 --ControlPort 9051 -f ./dirauth.torrc --V3BandwidthsFile ./data/${NODEID}/dirauth.v3bw" plugin="scallion" time="1"/>

@@ -160,7 +160,7 @@ LoggerServer* loggerserver_new(int argc, char* argv[], LoggerServerLogFunc slogf
 	FILE *file = fopen(h->log_path, "w+");
 	fclose(file);
 #else
-	int nfd = open(h->log_path, O_RDWR| O_CREAT);
+	int nfd = open(h->log_path, O_RDWR| O_CREAT, 0775);
 	close(nfd);
 #endif
 
