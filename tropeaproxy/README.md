@@ -57,7 +57,7 @@ where
 
 Please see also the `example-tor.xml`, a more complex example which may be run in Shadow with the shdow-tor-plugin.
 
-The latter shows an example of how tproxy can be used in a simulated Tor network with 3 clients, 2 servers, 5 Tor relays, 2 Tor exit node and a logger server.
+The latter shows an example of how tproxy can be used in a simulated Tor network with 2 clients, 2 servers, 5 Tor relays, 2 Tor exit node and a logger server.
 
 In particular, the tproxy plugin runs only on 1 server and on 2 clients.
 
