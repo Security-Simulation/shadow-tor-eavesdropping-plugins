@@ -1,10 +1,10 @@
 "tropeaproxy": a Shadow plug-in
 =========================
 
-This plug-in provides a simple TCP proxy. Also, `tropeaproxy` (abbreviated `tproxy`) whispers the hostname and 
+`tropeaproxy` (abbreviated `tproxy`) provides a simple TCP proxy. Also, it whispers the hostname and 
 the timestamp of each incoming connection to an external logger server.
 
-`tproxy` born with the aim to simulate and analyse timing attacks against Tor. 
+`tproxy` was born with the aim to simulate and analyse timing attacks against Tor. 
 In particular `tproxy` can be placed on both client and server sides in order to let 
 the logger server collect timing information about the TCP connections.
 
